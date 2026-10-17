@@ -34,7 +34,7 @@
 
   // ---------- API 응답 → 대시보드 데이터셋 ----------
   const SHEET_IDS = ['holdings', 'balances', 'reports', 'watchlist', 'acct_meta', 'other_assets'];
-  const MARKET_IDS = ['kospi', 'sp500', 'nasdaq', 'usdkrw', 'usdvnd'];
+  const MARKET_IDS = ['kospi', 'kosdaq', 'sp500', 'nasdaq', 'dow', 'sox', 'usdkrw', 'usdvnd'];
   const num = (x) => { const t = String(x == null ? '' : x).replace(/[,\s₩$%]/g, ''); return t === '' || isNaN(Number(t)) ? null : Number(t); };
 
   let RAW = {};

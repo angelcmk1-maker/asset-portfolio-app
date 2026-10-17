@@ -25,6 +25,9 @@ const MARKET = {
   kospi: ['^KS11', 'max', '1mo'],
   sp500: ['^GSPC', 'max', '1mo'],
   nasdaq: ['^IXIC', 'max', '1mo'],
+  kosdaq: ['^KQ11', 'max', '1mo'],
+  dow: ['^DJI', 'max', '1mo'],
+  sox: ['^SOX', 'max', '1mo'],
   usdkrw: ['KRW=X', 'max', '1mo'],
   usdvnd: ['VND=X', 'max', '1mo'],
 };

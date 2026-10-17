@@ -61,10 +61,10 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
 .app-chev{color:var(--color-fg-muted);font-size:20px}
 .app-sheet [hidden]{display:none}
 </style>
-<script>window.PF_BUILD = "20261017.2015";</script>
+<script>window.PF_BUILD = "20261017.2022";</script>
 <script src="vendor/d3.min.js"></script>
-<script src="js/shim.js?v=20261017.2015"></script>
-<script src="js/app.js?v=20261017.2015"></script>
+<script src="js/shim.js?v=20261017.2022"></script>
+<script src="js/app.js?v=20261017.2022"></script>
 </head>
 <body>
 <div id="dash-root">
@@ -79,6 +79,8 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
 .pf-grp>span{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);margin-right:2px}
 .pf-btn{font:inherit;font-size:var(--cds-font-size-caption);padding:4px 10px;border-radius:999px;border:1px solid var(--color-border-line);background:var(--color-panel);color:var(--color-fg-muted);cursor:pointer}
 .pf-month{font:inherit;font-size:var(--cds-font-size-caption);padding:3px 8px;border-radius:8px;border:1px solid var(--color-border-line);background:var(--color-panel);color:var(--color-fg);min-width:8.5em;color-scheme:light dark}
+.pf-ib i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.pf-idxsel{padding:var(--cds-pad-md) var(--cds-pad-lg)}
 .pf-tilde{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
 .pf-rg-msg{font-size:var(--cds-font-size-caption);color:var(--color-bad)}
 .pf-btn[aria-pressed=true]{background:var(--color-fg);color:var(--color-bg);border-color:var(--color-fg)}
@@ -415,6 +417,18 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
 
   <!-- 지수 비교 -->
   <section class="pf-page" id="bench" hidden>
+    <div class="pf-card pf-idxsel" id="card-idxsel">
+      <div class="pf-grp" id="ctl-idx"><span>비교할 지수</span>
+        <button class="pf-btn pf-ib" data-idx="kospi"><i style="background:#3b82f6"></i>KOSPI</button>
+        <button class="pf-btn pf-ib" data-idx="kosdaq"><i style="background:#06b6d4"></i>KOSDAQ</button>
+        <button class="pf-btn pf-ib" data-idx="sp500"><i style="background:#ef4444"></i>S&amp;P500</button>
+        <button class="pf-btn pf-ib" data-idx="nasdaq"><i style="background:#94a3b8"></i>NASDAQ</button>
+        <button class="pf-btn pf-ib" data-idx="dow"><i style="background:#f97316"></i>다우존스</button>
+        <button class="pf-btn pf-ib" data-idx="sox"><i style="background:#a16207"></i>필라델피아 반도체</button>
+        <button class="pf-btn pf-ib" data-idx="usdkrw"><i style="background:#8b5cf6"></i>원/달러</button>
+      </div>
+      <p class="pf-note" style="margin:6px 0 0">누른 지수만 아래 세 카드(수익률 비교·같은 돈을 넣었다면·기간별 수익률)에 표시됩니다. 원/달러는 수익률 비교와 표에만 나옵니다.</p>
+    </div>
     <div class="pf-card" id="card-idxline">
         <h2 id="h-idxline">주요지수 수익률 비교</h2>
         <p class="pf-note" id="nt-idxline">선택 기간 시작을 0%로 맞춘 누적 수익률</p>
@@ -622,6 +636,9 @@ dash.loader('sp500', { description: pfDesc, fn: pfSeries });
 dash.loader('nasdaq', { description: pfDesc, fn: pfSeries });
 dash.loader('usdkrw', { description: pfDesc, fn: pfSeries });
 dash.loader('usdvnd', { description: pfDesc, fn: pfSeries });
+dash.loader('kosdaq', { description: pfDesc, fn: pfSeries });
+dash.loader('dow', { description: pfDesc, fn: pfSeries });
+dash.loader('sox', { description: pfDesc, fn: pfSeries });
 dash.loader('px_088980', { description: pfDesc, fn: pfSeries });
 dash.loader('px_133690', { description: pfDesc, fn: pfSeries });
 dash.loader('px_161510', { description: pfDesc, fn: pfSeries });
@@ -637,11 +654,11 @@ dash.loader('px_490490', { description: pfDesc, fn: pfSeries });
 
 dash.calc('idx', {
   title: '지수·환율 월말값',
-  description: 'KOSPI·S&P500·NASDAQ·원/달러를 월별 마지막 값으로 정렬(2015년부터, 환율 100 미만 오류값 제외, 빈 달은 직전 값)',
-  inputs: ['kospi', 'sp500', 'nasdaq', 'usdkrw'],
-  fn: (kospi, sp500, nasdaq, usdkrw) => {
+  description: 'KOSPI·KOSDAQ·S&P500·NASDAQ·다우존스·필라델피아 반도체·원/달러를 월별 마지막 값으로 정렬(2015년부터, 환율 100 미만 오류값 제외, 빈 달은 직전 값, 상장 전 달은 빈 값)',
+  inputs: ['kospi', 'kosdaq', 'sp500', 'nasdaq', 'dow', 'sox', 'usdkrw'],
+  fn: (kospi, kosdaq, sp500, nasdaq, dow, sox, usdkrw) => {
     const by = (rows, ok) => { const m = new Map(); for (const r of rows) { if (ok && !ok(r.close)) continue; m.set(r.month, r.close); } return m; };
-    const maps = [['kospi', by(kospi)], ['sp500', by(sp500)], ['nasdaq', by(nasdaq)], ['usdkrw', by(usdkrw, (v) => v > 100)]];
+    const maps = [['kospi', by(kospi)], ['kosdaq', by(kosdaq)], ['sp500', by(sp500)], ['nasdaq', by(nasdaq)], ['dow', by(dow)], ['sox', by(sox)], ['usdkrw', by(usdkrw, (v) => v > 100)]];
     const months = [...new Set(maps.flatMap(([, m]) => [...m.keys()]))].filter((x) => x >= '2015-01').sort();
     const last = {}; const out = [];
     for (const month of months) {
@@ -715,14 +732,15 @@ dash.calc('bench', {
         map.set(mk, (map.get(mk) || 0) + Number(r.krw));
       }
       const first = [...net.keys()].sort()[0];
-      const u = { kospi: 0, sp500: 0, sp500_fx: 0, nasdaq: 0, nasdaq_fx: 0 };
+      const KR = ['kospi', 'kosdaq'], US = ['sp500', 'nasdaq', 'dow', 'sox'];
+      const keys = [...KR, ...US, ...US.map((x) => x + '_fx')]; const u = Object.fromEntries(keys.map((k) => [k, 0]));
       let principal = 0, book = 0;
       for (const row of idx) {
         if (row.month < first) continue;
         const v = net.get(row.month) || 0; principal += v; book += v + (div.get(row.month) || 0);
-        const px = { kospi: row.kospi, sp500: row.sp500, sp500_fx: row.sp500 * row.usdkrw, nasdaq: row.nasdaq, nasdaq_fx: row.nasdaq * row.usdkrw };
+        const px = {}; for (const k of KR) px[k] = row[k]; for (const k of US) { px[k] = row[k]; px[k + '_fx'] = row[k] == null ? null : row[k] * row.usdkrw; }
         const o = { combo: c.join('+'), month: row.month, principal, book };
-        for (const k of Object.keys(u)) { if (v) u[k] += v / px[k]; o[k] = u[k] * px[k]; }
+        for (const k of keys) { if (px[k] == null) { o[k] = null; continue; } if (v) u[k] += v / px[k]; o[k] = u[k] * px[k]; }
         out.push(o);
       }
     }
@@ -732,17 +750,18 @@ dash.calc('bench', {
 
 dash.calc('index_returns', {
   title: '기간별 지수 수익률',
-  description: '월말값으로 올해·1·3·5년·투자 시작(2023-12 말 기준) 이후 수익률. 환율 반영판은 원화로 환산한 S&P500·NASDAQ',
+  description: '월말값으로 올해·1·3·5년·투자 시작(2023-12 말 기준) 이후 수익률. 환율 반영판은 원화로 환산한 미국 지수(S&P500·NASDAQ·다우·반도체)',
   inputs: ['idx'],
   fn: (idx) => {
     const last = idx[idx.length - 1]; const at = (m) => idx.find((r) => r.month >= m) || idx[0];
     const back = (n) => { const d = new Date(Date.UTC(Number(last.month.slice(0, 4)), Number(last.month.slice(5)) - 1 - n, 1)); return d.toISOString().slice(0, 7); };
     const starts = { ytd: `${Number(last.month.slice(0, 4)) - 1}-12`, y1: back(12), y3: back(36), y5: back(60), since: '2023-12' };
-    const series = [['KOSPI', '기본', (r) => r.kospi], ['S&P500', '기본', (r) => r.sp500], ['NASDAQ', '기본', (r) => r.nasdaq], ['원/달러 환율', '기본', (r) => r.usdkrw],
-      ['KOSPI', '환율 반영', (r) => r.kospi], ['S&P500', '환율 반영', (r) => r.sp500 * r.usdkrw], ['NASDAQ', '환율 반영', (r) => r.nasdaq * r.usdkrw], ['원/달러 환율', '환율 반영', (r) => r.usdkrw]];
-    return series.map(([index, basis, f]) => {
-      const row = { index, basis };
-      for (const [k, m] of Object.entries(starts)) row[k] = f(last) / f(at(m)) - 1;
+    const list = [['kospi', 'KOSPI', 0], ['kosdaq', 'KOSDAQ', 0], ['sp500', 'S&P500', 1], ['nasdaq', 'NASDAQ', 1], ['dow', '다우존스', 1], ['sox', '필라델피아 반도체', 1], ['usdkrw', '원/달러 환율', 0]];
+    const series = [];
+    for (const basis of ['기본', '환율 반영']) for (const [id, index, us] of list) series.push([id, index, basis, (r) => (r[id] == null ? null : r[id] * (us && basis === '환율 반영' ? r.usdkrw : 1))]);
+    return series.map(([id, index, basis, f]) => {
+      const row = { id, index, basis };
+      for (const [k, m] of Object.entries(starts)) { const a = f(last), b = f(at(m)); row[k] = a == null || b == null ? null : a / b - 1; }
       return row;
     });
   },
@@ -1328,6 +1347,7 @@ W.pfSetBtns = () => {
   const p = dash.params(); const owners = p.owners || W.pfOwners;
   document.querySelectorAll('[data-owner]').forEach((b) => b.setAttribute('aria-pressed', String(owners.includes(b.dataset.owner))));
   document.querySelectorAll('[data-gran]').forEach((b) => b.setAttribute('aria-pressed', String((p.gran || '월') === b.dataset.gran)));
+  const isel = W.pfIdxSel(); document.querySelectorAll('[data-idx]').forEach((b) => b.setAttribute('aria-pressed', String(isel.includes(b.dataset.idx))));
   const rf = document.getElementById('rg-from'), rt = document.getElementById('rg-to'), now = new Date().toISOString().slice(0, 7);
   if (rf && document.activeElement !== rf) rf.value = W.pfFrom();
   if (rt && document.activeElement !== rt) rt.value = W.pfIsMonth(p.to) ? p.to : '';
@@ -1349,6 +1369,11 @@ W.pfSetRange = () => {
   if (f && t && t < f) { msg.textContent = '끝 월이 시작 월보다 빠릅니다'; return; }
   msg.textContent = ''; dash.setParams({ from: f || W.pfStartDefault, to: t || '' });
 };
+document.querySelectorAll('[data-idx]').forEach((b) => b.addEventListener('click', () => {
+  const cur = W.pfIdxSel(); const id = b.dataset.idx;
+  let next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]; if (!next.length) next = [id];
+  dash.setParams({ idx_sel: W.pfIdxList.map((i) => i.id).filter((x) => next.includes(x)) });
+}));
 ['rg-from', 'rg-to'].forEach((id) => document.getElementById(id).addEventListener('change', W.pfSetRange));
 document.getElementById('rg-reset').addEventListener('click', () => { document.getElementById('rg-msg').textContent = ''; dash.setParams({ from: W.pfStartDefault, to: '' }); });
 document.querySelectorAll('[data-fx]').forEach((b) => b.addEventListener('click', () => dash.setParams({ fx: b.dataset.fx })));
@@ -1376,6 +1401,14 @@ if (['home', 'trend', 'dividend', 'bench', 'portfolio', 'sim', 'report'].include
 const W = window;
 const C = dash.colors;
 const P = { mine: '#22c55e', kospi: '#3b82f6', sp: '#ef4444', nq: '#94a3b8', fx: '#8b5cf6', gold: '#eab308', muted: '#cbd5e1', gray: '#9ca3af' };
+W.pfIdxList = [
+  { id: 'kospi', name: 'KOSPI', color: P.kospi, us: false }, { id: 'kosdaq', name: 'KOSDAQ', color: '#06b6d4', us: false },
+  { id: 'sp500', name: 'S&P500', color: P.sp, us: true }, { id: 'nasdaq', name: 'NASDAQ', color: P.nq, us: true },
+  { id: 'dow', name: '다우존스', color: '#f97316', us: true }, { id: 'sox', name: '필라델피아 반도체', color: '#a16207', us: true },
+  { id: 'usdkrw', name: '원/달러', color: P.fx, fx: true },
+];
+W.pfIdxDefault = ['kospi', 'sp500', 'nasdaq', 'usdkrw'];
+W.pfIdxSel = () => { const s = dash.params().idx_sel; const ok = Array.isArray(s) ? s.filter((x) => W.pfIdxList.some((i) => i.id === x)) : []; return ok.length ? ok : W.pfIdxDefault; };
 const won = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 });
 const enc = (v) => String(v).replace(/[%&=,]/g, (c) => encodeURIComponent(c));
 const setText = (id, txt, src) => { const el = document.getElementById(id); if (!el) return el; el.textContent = txt; el.classList.remove('dash-skeleton'); return el; };
@@ -1575,10 +1608,9 @@ W.pfDraw = () => {
       box.classList.remove('dash-skeleton');
       const all = bn.data.filter((r) => r.combo === combo);
       const r = all.filter((x) => W.pfInRange(x.month)); const X = (x) => W.pfMonthDate(x.month);
+      const sel = W.pfIdxSel();
       const ser = [{ name: '내 투자 (원금+배당)', color: P.mine, width: 3.5, area: true, values: r.map((x) => ({ x: X(x), y: x.book })) },
-        { name: 'KOSPI', color: P.kospi, dash: true, values: r.map((x) => ({ x: X(x), y: x.kospi })) },
-        { name: 'S&P500', color: P.sp, dash: true, values: r.map((x) => ({ x: X(x), y: x['sp500' + k] })) },
-        { name: 'NASDAQ', color: P.nq, dash: true, values: r.map((x) => ({ x: X(x), y: x['nasdaq' + k] })) },
+        ...W.pfIdxList.filter((i) => !i.fx && sel.includes(i.id)).map((i) => ({ name: i.name, color: i.color, dash: true, values: r.map((x) => ({ x: X(x), y: x[i.id + (i.us ? k : '')] ?? null })) })),
         { name: '납입 원금', color: P.muted, dash: true, values: r.map((x) => ({ x: X(x), y: x.principal })) }];
       W.pfLegend(document.getElementById('lg-bench'), ser); W.pfLine(box, ser);
       document.getElementById('nt-bench').textContent = `2023년 말 투자·연금 잔액을 2024년 1월에, 이후 월별 순납입액(인출 포함)을 그 달 말 지수로 사고팔았다고 가정한 가치. 내 계좌선은 시세 변동 없이 원금+배당만 반영합니다. ${fx === 'krw' ? '미국 지수는 원/달러 변동 포함.' : '미국 지수는 달러 기준.'}`;
@@ -1590,9 +1622,10 @@ W.pfDraw = () => {
       ib.classList.remove('dash-skeleton');
       const st = W.pfPrevMonth(W.pfFrom());
       const r = ix.data.filter((x) => x.month >= st && x.month <= W.pfTo()); const b0 = r[0];
-      const f = { kospi: (x) => x.kospi, sp: (x) => x.sp500 * (k ? x.usdkrw : 1), nq: (x) => x.nasdaq * (k ? x.usdkrw : 1), fx: (x) => x.usdkrw };
-      const mk = (name, color, fn) => ({ name, color, values: r.map((x) => ({ x: W.pfMonthDate(x.month), y: fn(x) / fn(b0) - 1 })) });
-      const ser = [mk('KOSPI', P.kospi, f.kospi), mk('NASDAQ', P.nq, f.nq), mk('S&P500', P.sp, f.sp), mk('달러', P.fx, f.fx)].map((x) => ({ ...x, dash: true }));
+      const val = (i, x) => (x[i.id] == null ? null : x[i.id] * (i.us && k ? x.usdkrw : 1));
+      const mk = (i) => { const base = r.find((x) => val(i, x) != null); return { name: i.name, color: i.color, dash: true,
+        values: r.map((x) => ({ x: W.pfMonthDate(x.month), y: base && val(i, x) != null ? val(i, x) / val(i, base) - 1 : null })) }; };
+      const ser = W.pfIdxList.filter((i) => W.pfIdxSel().includes(i.id)).map(mk);
       const bnd = dash.data('bench');
       if (bnd.status === 'ok') {
         const mb = new Map(bnd.data.filter((x) => x.combo === combo).map((x) => [x.month, x.principal > 0 ? x.book / x.principal : null]));
@@ -1614,7 +1647,7 @@ W.pfDraw = () => {
     if (ir.status === 'ok') {
       const basis = k ? '환율 반영' : '기본';
       document.getElementById('nt-idxret').textContent = `월말 종가 기준(이번 달은 최근 종가). ${k ? '미국 지수는 원화로 환산한 수익률.' : '미국 지수는 달러 기준 수익률.'}`;
-      tb.replaceChildren(...ir.data.filter((x) => x.basis === basis).map((x) => {
+      tb.replaceChildren(...ir.data.filter((x) => x.basis === basis && W.pfIdxSel().includes(x.id)).map((x) => {
         const tr = document.createElement('tr'); tr.dataset.key = [x.index, x.basis].map(enc).join(',');
         const td0 = document.createElement('td'); td0.className = 'l'; td0.textContent = x.index; tr.append(td0);
         for (const f of ['ytd', 'y1', 'y3', 'y5', 'since']) { const td = document.createElement('td'); td.textContent = W.pfPct(x[f]); W.pfSign(td, x[f]); tr.append(td); }
