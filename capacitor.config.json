@@ -1,0 +1,12 @@
+{
+  "appId": "com.angelcmk1.assetportfolio",
+  "appName": "자산 포트폴리오",
+  "webDir": "web",
+  "server": {
+    "url": "https://angelcmk1-maker.github.io/asset-portfolio-app/",
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#1f1e1c"
+  }
+}

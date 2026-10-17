@@ -1,0 +1,1776 @@
+<style>
+#dash-root{--dash-gutter:var(--cds-pad-lg)}
+.pf{font-family:var(--font-anthropic-sans);color:var(--color-fg);max-width:1200px;margin-inline:auto;display:flex;flex-direction:column;gap:var(--cds-gap-lg)}
+.pf-head h1{font-family:var(--font-anthropic-serif);font-weight:400;font-size:var(--cds-font-size-title);margin:0}
+.pf-take{color:var(--color-fg-muted);font-size:var(--cds-font-size-body);margin:var(--cds-gap-xs) 0 0;line-height:1.5}
+.pf-take b{color:var(--color-fg);font-weight:600}
+.pf-ctrl{display:flex;flex-wrap:wrap;gap:var(--cds-gap-md);align-items:center}
+.pf-grp{display:flex;align-items:center;gap:var(--cds-gap-xs);flex-wrap:wrap}
+.pf-grp>span{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);margin-right:2px}
+.pf-btn{font:inherit;font-size:var(--cds-font-size-caption);padding:4px 10px;border-radius:999px;border:1px solid var(--color-border-line);background:var(--color-panel);color:var(--color-fg-muted);cursor:pointer}
+.pf-btn[aria-pressed=true]{background:var(--color-fg);color:var(--color-bg);border-color:var(--color-fg)}
+.pf-tabs{display:flex;gap:var(--cds-gap-xs);border-bottom:1px solid var(--color-border-line);overflow-x:auto}
+.pf-tab{font:inherit;font-size:var(--cds-font-size-body);padding:8px 12px;background:none;border:0;border-bottom:2px solid transparent;color:var(--color-fg-muted);cursor:pointer;white-space:nowrap}
+.pf-tab[aria-selected=true]{color:var(--color-fg);border-bottom-color:var(--color-fg);font-weight:600}
+.pf-page{display:flex;flex-direction:column;gap:var(--cds-gap-md)}
+.pf-page[hidden]{display:none}
+.pf-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:var(--cds-gap-md)}
+.pf-tile{background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:var(--cds-radius);padding:var(--cds-pad-md) var(--cds-pad-lg)}
+.pf-tile .lb{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.pf-tile .v{font-family:var(--font-anthropic-serif);font-size:var(--cds-font-size-title);font-weight:400;font-variant-numeric:tabular-nums;margin-top:4px;white-space:nowrap}
+.pf-tile .sub{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);margin-top:2px;font-variant-numeric:tabular-nums}
+.pf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,26rem),1fr));gap:var(--cds-gap-md)}
+.pf-card{background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:var(--cds-radius);padding:var(--cds-pad-lg);min-width:0}
+.pf-card h2{font-size:var(--cds-font-size-heading);font-weight:var(--cds-font-weight-medium);margin:0}
+.pf-note{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);margin:4px 0 var(--cds-gap-sm);line-height:1.45}
+.pf-chart{position:relative;min-height:260px}
+.pf-chart.sm{min-height:200px}
+.pf-tree{position:relative;min-height:280px}
+.pf-legend{display:flex;flex-wrap:wrap;gap:var(--cds-gap-sm) var(--cds-gap-md);font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);margin-bottom:var(--cds-gap-xs)}
+.pf-legend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.pf-tip{position:absolute;pointer-events:none;background:var(--cds-surface-popover);border:1px solid var(--cds-border);border-radius:var(--cds-radius);box-shadow:var(--cds-shadow-popover);padding:var(--cds-pad-xs) var(--cds-pad-sm);font-size:var(--cds-font-size-caption);font-variant-numeric:tabular-nums;white-space:nowrap;z-index:5;display:none}
+.pf-tip .t{color:var(--cds-text-secondary);margin-bottom:2px}
+.pf-tip i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
+.pf-tbl-wrap{max-height:420px;overflow:auto}
+.pf-tbl{width:100%;border-collapse:collapse;font-size:var(--cds-font-size-caption);font-variant-numeric:tabular-nums}
+.pf-tbl th{position:sticky;top:0;background:var(--color-panel);text-align:right;font-weight:600;color:var(--color-fg-muted);padding:6px 8px;border-bottom:1px solid var(--color-border-line);white-space:nowrap}
+.pf-tbl td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--color-border-line);white-space:nowrap}
+.pf-tbl th:first-child,.pf-tbl td:first-child,.pf-tbl .l{text-align:left}
+.pf-pos{color:var(--color-ok)}.pf-neg{color:var(--color-bad)}
+.pf-fail{display:flex;align-items:center;justify-content:center;gap:6px;min-height:inherit;height:100%;color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
+.pf-fail::before{content:"";width:.375rem;height:.375rem;border-radius:50%;background:var(--color-bad)}
+.pf [data-dash-source-state=refreshing]{opacity:.5;transition:opacity var(--cds-dur-slow)}
+.pf [data-dash-source-state=empty]{color:transparent}
+.pf-cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr));gap:var(--cds-gap-sm)}
+.pf-cmp>div{border:1px solid var(--color-border-line);border-radius:var(--cds-radius);padding:var(--cds-pad-sm);text-align:center}
+.pf-cmp .lb{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.pf-cmp .v{font-family:var(--font-anthropic-serif);font-size:var(--cds-font-size-heading);font-variant-numeric:tabular-nums;margin-top:2px}
+.pf-cmp .sub{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);font-variant-numeric:tabular-nums}
+/* 모바일 앱 레이아웃 */
+.pf-filter-btn{display:none;font:inherit;font-size:var(--cds-font-size-caption);padding:6px 12px;border-radius:999px;border:1px solid var(--color-border-line);background:var(--color-panel);color:var(--color-fg);cursor:pointer;min-height:36px;align-items:center;gap:6px}
+.pf-bnav{display:none;position:sticky;bottom:0;z-index:20;margin-top:var(--cds-gap-sm);background:var(--color-panel);border-top:1px solid var(--color-border-line);border-radius:var(--cds-radius) var(--cds-radius) 0 0;justify-content:space-around;padding:4px 0 calc(4px + env(safe-area-inset-bottom))}
+.pf-bnav .pf-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;border:0;padding:6px 0;min-height:52px;color:var(--color-fg-muted)}
+.pf-bnav .pf-tab[aria-selected=true]{color:var(--color-fg);font-weight:600;border:0}
+.pf-bnav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pf-chart svg,.pf-tree svg{touch-action:pan-y}
+@media (max-width:640px){
+  #dash-root{--dash-gutter:var(--cds-pad-sm)}
+  .pf{gap:var(--cds-gap-md)}
+  .pf-head h1{font-size:var(--cds-font-size-heading)}
+  .pf-take{font-size:var(--cds-font-size-caption)}
+  .pf-tabs{display:none}
+  .pf-bnav{display:flex}
+  .pf-filter-btn{display:inline-flex}
+  .pf-ctrl{gap:var(--cds-gap-sm)}
+  .pf-ctrl .pf-x{display:none;width:100%}
+  .pf-ctrl.open .pf-x{display:flex}
+  .pf-btn{min-height:36px;padding:6px 12px}
+  .pf-tiles{grid-template-columns:1fr 1fr;gap:var(--cds-gap-sm)}
+  .pf-tile{padding:var(--cds-pad-sm) var(--cds-pad-md)}
+  .pf-tile .v{font-size:var(--cds-font-size-heading);white-space:normal;word-break:keep-all}
+  .pf-page>.pf-tiles>.pf-tile:first-child{grid-column:1/-1;padding:var(--cds-pad-md) var(--cds-pad-lg)}
+  .pf-page>.pf-tiles>.pf-tile:first-child .v{font-size:var(--cds-font-size-title)}
+  .pf-grid{grid-template-columns:1fr}
+  .pf-card{padding:var(--cds-pad-md)}
+  .pf-cmp{grid-template-columns:1fr 1fr}
+  .pf-cmp>div:first-child{grid-column:1/-1}
+  .pf-tbl-wrap{max-height:360px}
+  #tb-accounts th:nth-child(3),#tb-accounts td:nth-child(3),#tb-accounts th:nth-child(4),#tb-accounts td:nth-child(4),#tb-accounts th:nth-child(7),#tb-accounts td:nth-child(7),
+  #tb-items th:nth-child(4),#tb-items td:nth-child(4),#tb-items th:nth-child(5),#tb-items td:nth-child(5),
+  #tb-holdings th:nth-child(2),#tb-holdings td:nth-child(2),#tb-holdings th:nth-child(3),#tb-holdings td:nth-child(3),#tb-holdings th:nth-child(5),#tb-holdings td:nth-child(5),#tb-holdings th:nth-child(6),#tb-holdings td:nth-child(6),#tb-bal th:nth-child(2),#tb-bal td:nth-child(2),#tb-acct-eval th:nth-child(4),#tb-acct-eval td:nth-child(4),
+  #tb-idxret th:nth-child(5),#tb-idxret td:nth-child(5){display:none}
+}
+/* ---- 앱 스타일 테마 ---- */
+.pf{--pf-mine:#22c55e;--pf-kospi:#3b82f6;--pf-sp:#ef4444;--pf-nq:#94a3b8;--pf-fx:#8b5cf6;--pf-gold:#eab308;--pf-muted:#cbd5e1;--pf-r:18px;--pf-shadow:0 1px 2px rgba(15,23,42,.04),0 6px 20px rgba(15,23,42,.06)}
+.pf-card,.pf-tile{border-radius:var(--pf-r);box-shadow:var(--pf-shadow);border-color:color-mix(in srgb,var(--color-border-line) 60%,transparent)}
+.pf-card h2{font-size:var(--cds-font-size-heading);font-weight:700;letter-spacing:-.01em}
+.pf-tile .v{font-weight:700;font-family:var(--font-anthropic-sans);letter-spacing:-.02em}
+.pf-btn{border-radius:10px;font-weight:500}
+.pf-btn[aria-pressed=true]{background:color-mix(in srgb,var(--color-fg) 8%,var(--color-panel));color:var(--color-fg);border-color:color-mix(in srgb,var(--color-fg) 25%,transparent);font-weight:700}
+.pf-legend{gap:6px 14px}
+.pf-legend i{width:16px;height:4px;border-radius:3px}
+.pf-hero{background:var(--color-panel);border:1px solid color-mix(in srgb,var(--color-border-line) 60%,transparent);border-radius:var(--pf-r);box-shadow:var(--pf-shadow);padding:var(--cds-pad-lg) var(--cds-pad-xl);display:grid;gap:var(--cds-gap-md)}
+.pf-hero .ttl{display:flex;align-items:center;gap:8px;color:var(--color-fg-muted);font-size:var(--cds-font-size-body)}
+.pf-hero .ttl svg{width:28px;height:28px;padding:5px;border-radius:9px;background:color-mix(in srgb,var(--pf-kospi) 12%,transparent);stroke:var(--pf-kospi);fill:none;stroke-width:1.8}
+.pf-hero .big{font-size:clamp(28px,7vw,40px);font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.pf-hero .big small{font-size:.5em;font-weight:600;margin-left:4px}
+.pf-goal{display:grid;gap:6px}
+.pf-goal .row{display:flex;justify-content:space-between;font-size:var(--cds-font-size-body);font-weight:600}
+.pf-goal .row b{font-variant-numeric:tabular-nums}
+.pf-goal .bar{height:10px;border-radius:99px;background:color-mix(in srgb,var(--color-fg) 7%,transparent);overflow:hidden}
+.pf-goal .bar span{display:block;height:100%;border-radius:99px;transition:width .6s ease}
+.pf-goal .cap{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.pf-hero hr{border:0;border-top:1px solid var(--color-border-line);margin:2px 0}
+.pf-hero .pair{display:grid;grid-template-columns:1fr 1fr;gap:var(--cds-gap-md)}
+.pf-hero .pair .lb{color:var(--color-fg-muted);font-size:var(--cds-font-size-body)}
+.pf-hero .pair .v{font-size:var(--cds-font-size-heading);font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
+.pf-pill{display:inline-block;margin-top:6px;padding:3px 10px;border-radius:8px;font-weight:700;font-size:var(--cds-font-size-caption);background:color-mix(in srgb,var(--pf-mine) 14%,transparent);color:var(--pf-mine)}
+.pf-pill.neg{background:color-mix(in srgb,var(--pf-sp) 14%,transparent);color:var(--pf-sp)}
+.pf-days{text-align:center;font-size:var(--cds-font-size-heading);font-weight:700;color:var(--color-fg-muted)}
+.pf-days b{color:var(--pf-kospi)}
+.pf-rcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,7.5rem),1fr));gap:var(--cds-gap-sm);margin-top:var(--cds-gap-md)}
+.pf-rcards>div{border:1px solid var(--color-border-line);border-radius:14px;padding:10px 6px;text-align:center;background:var(--color-panel)}
+.pf-rcards .lb{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.pf-rcards .v{font-size:var(--cds-font-size-heading);font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
+.pf-cmp>div{border-radius:14px}
+.pf-cmp .v{font-family:var(--font-anthropic-sans);font-weight:800}
+@media (max-width:640px){.pf-rcards{grid-template-columns:repeat(4,1fr)}.pf-rcards .v{font-size:var(--cds-font-size-body)}.pf-hero{padding:var(--cds-pad-md) var(--cds-pad-lg)}}
+.pf-replist{display:flex;flex-direction:column;gap:var(--cds-gap-sm);margin-top:var(--cds-gap-sm)}
+.pf-rep{border:1px solid var(--color-border-line);border-radius:12px;padding:var(--cds-pad-sm) var(--cds-pad-md);background:var(--color-bg)}
+.pf-rep>button{all:unset;display:block;width:100%;cursor:pointer}
+.pf-rep .meta{display:flex;gap:8px;align-items:center;font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.pf-rep .tag{padding:1px 8px;border-radius:6px;font-weight:700;background:color-mix(in srgb,#3b82f6 14%,transparent);color:#3b82f6}
+.pf-rep .tag.iss{background:color-mix(in srgb,#22c55e 14%,transparent);color:#16a34a}
+.pf-rep .ttl{font-weight:700;margin:4px 0 2px;line-height:1.35}
+.pf-rep .sum{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);line-height:1.5;white-space:pre-line}
+.pf-rep .body{margin-top:var(--cds-gap-sm);border-top:1px dashed var(--color-border-line);padding-top:var(--cds-gap-sm);font-size:var(--cds-font-size-body);line-height:1.6;overflow-wrap:anywhere}
+.pf-rep .body h3{font-size:1rem;margin:14px 0 6px}.pf-rep .body h4{font-size:.95rem;margin:10px 0 4px}
+.pf-rep .body ul{margin:4px 0 8px;padding-left:1.2em}.pf-rep .body p{margin:4px 0 8px}
+.pf-rep .body a{color:#3b82f6;word-break:break-all}
+.pf-rep .body .tw{overflow-x:auto;margin:6px 0 10px}
+.pf-rep .body table{border-collapse:collapse;font-size:var(--cds-font-size-caption);min-width:100%}
+.pf-rep .body th,.pf-rep .body td{border:1px solid var(--color-border-line);padding:4px 6px;text-align:left;white-space:nowrap}
+.pf-rep .body th{background:var(--color-panel)}
+.pf-rep-empty{padding:var(--cds-pad-md);color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
+.pf-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+.pf-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1px solid var(--color-border-line);font-size:var(--cds-font-size-caption);background:var(--color-bg)}
+.pf-chip .k{font-size:10px;padding:0 6px;border-radius:6px;background:color-mix(in srgb,#22c55e 14%,transparent);color:#16a34a;font-weight:700}
+.pf-chip .k.w{background:color-mix(in srgb,#8b5cf6 14%,transparent);color:#7c3aed}
+.pf-chip.off{opacity:.45;text-decoration:line-through}
+.pf-editlink{display:inline-block;padding:8px 14px;border-radius:10px;border:1px solid var(--color-border-line);background:var(--color-panel);color:var(--color-fg);font-size:var(--cds-font-size-caption);font-weight:600;text-decoration:none}
+.pf-risk-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.pf-riskbar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--color-border-line);margin:6px 0 10px}
+.pf-riskbar span{height:100%}
+.pf-riskrows{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:8px}
+.pf-riskrow{border:1px solid var(--color-border-line);border-radius:12px;padding:10px 12px;background:var(--color-bg)}
+.pf-riskrow .nm{display:flex;align-items:center;gap:6px;font-weight:700}
+.pf-riskrow .dot{width:10px;height:10px;border-radius:50%}
+.pf-riskrow .v{font-size:1.25rem;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
+.pf-riskrow .sub{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);font-variant-numeric:tabular-nums}
+</style>
+
+<div class="pf">
+  <div class="pf-head" id="top">
+    <h1>자산 포트폴리오</h1>
+    <p class="pf-take" id="pf-take" data-source="summary"><span class="dash-skeleton">—</span></p>
+  </div>
+
+  <div class="pf-ctrl">
+    <div class="pf-grp" id="ctl-owner"><span>계좌</span>
+      <button class="pf-btn" data-owner="본인">본인</button>
+      <button class="pf-btn" data-owner="이솔">이솔</button>
+      <button class="pf-btn" data-owner="이서">이서</button>
+    </div>
+    <button class="pf-filter-btn" id="pf-filter" aria-expanded="false">보기 설정 <span id="pf-filter-sum"></span></button>
+    <div class="pf-grp pf-x" id="ctl-gran"><span>단위</span>
+      <button class="pf-btn" data-gran="월">월</button>
+      <button class="pf-btn" data-gran="분기">분기</button>
+      <button class="pf-btn" data-gran="연">연</button>
+    </div>
+    <div class="pf-grp pf-x" id="ctl-range"><span>기간</span>
+      <button class="pf-btn" data-range="1년">1년</button>
+      <button class="pf-btn" data-range="3년">3년</button>
+      <button class="pf-btn" data-range="5년">5년</button>
+      <button class="pf-btn" data-range="전체">투자 시작 이후</button>
+    </div>
+    <div class="pf-grp pf-x" id="ctl-fx"><span>통화</span>
+      <button class="pf-btn" data-fx="krw">원화 환산</button>
+      <button class="pf-btn" data-fx="local">현지 통화</button>
+    </div>
+  </div>
+
+  <div class="pf-tabs" role="tablist">
+    <button class="pf-tab" role="tab" data-tab="home">홈</button>
+    <button class="pf-tab" role="tab" data-tab="trend">자산 추이</button>
+    <button class="pf-tab" role="tab" data-tab="dividend">배당 현황</button>
+    <button class="pf-tab" role="tab" data-tab="bench">지수 비교</button>
+    <button class="pf-tab" role="tab" data-tab="portfolio">포트폴리오</button>
+    <button class="pf-tab" role="tab" data-tab="sim">시뮬레이션</button>
+    <button class="pf-tab" role="tab" data-tab="report">리포트</button>
+  </div>
+
+  <!-- 홈 -->
+  <section class="pf-page" id="home">
+    <div class="pf-hero" id="hero">
+      <div class="ttl"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M16 12.5h2M3 9h15a3 3 0 0 1 3 3"/></svg>총 자산</div>
+      <div class="big"><span class="dash-skeleton" id="t-book" data-source="total_assets" data-field="total_value">—</span><small>원</small></div>
+      <div id="t-book-sub" style="color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)"></div>
+      <div class="pf-goal" data-source="goals">
+        <div class="row"><span>연간 입금액 목표</span><b id="g1p" style="color:var(--pf-mine)">—</b></div>
+        <div class="bar"><span id="g1b" style="background:var(--pf-mine);width:0"></span></div>
+        <div class="cap" id="g1c"></div>
+      </div>
+      <div class="pf-goal" data-source="goals">
+        <div class="row"><span>최종 총자산 목표</span><b id="g2p" style="color:var(--pf-kospi)">—</b></div>
+        <div class="bar"><span id="g2b" style="background:var(--pf-kospi);width:0"></span></div>
+        <div class="cap" id="g2c"></div>
+      </div>
+      <div class="pf-goal" data-source="goals">
+        <div class="row"><span>은퇴 목표시점</span><b id="g3p" style="color:var(--pf-kospi)">—</b></div>
+        <div class="bar"><span id="g3b" style="background:var(--pf-kospi);width:0"></span></div>
+        <div class="cap" id="g3c"></div>
+      </div>
+      <hr>
+      <div class="pair">
+        <div><div class="lb">원금</div><div class="v" id="h-prin" data-source="total_assets" data-field="total_principal">—</div></div>
+        <div><div class="lb">누적손익</div><div class="v" id="h-gain" data-source="total_assets" data-field="total_gain">—</div><span class="pf-pill" id="h-ret" data-source="total_assets" data-field="total_ret">—</span></div>
+      </div>
+      <div class="pf-days" id="h-days"></div>
+    </div>
+    <div class="pf-tiles">
+      
+      <div class="pf-tile"><div class="lb">납입 원금</div><div class="v dash-skeleton" id="t-principal" data-source="summary" data-field="principal">—</div><div class="sub" id="t-start"></div></div>
+      <div class="pf-tile"><div class="lb">배당·분배금 (2024~)</div><div class="v dash-skeleton" id="t-div" data-source="summary" data-field="dividend">—</div><div class="sub" id="t-div-sub"></div></div>
+      <div class="pf-tile"><div class="lb">이자 (2024~)</div><div class="v dash-skeleton" id="t-int" data-source="summary" data-field="interest">—</div><div class="sub">예금·저축 결산이자</div></div>
+      <div class="pf-tile"><div class="lb">올해 납입액</div><div class="v dash-skeleton" id="t-ytd" data-source="summary" data-field="ytd_contrib">—</div><div class="sub" id="t-ytd-sub"></div></div>
+      <div class="pf-tile"><div class="lb">보유종목 평가손익</div><div class="v dash-skeleton" id="t-gain" data-source="hold_summary" data-field="hold_gain">—</div><div class="sub" id="t-gain-sub"></div></div>
+    </div>
+    <div class="pf-card" id="card-risk">
+      <div class="pf-risk-head"><h2>자산 분류</h2>
+        <div class="pf-grp" id="ctl-risk"><span>집 등 기타자산</span><button class="pf-btn" data-risk-other="Y">포함</button><button class="pf-btn" data-risk-other="N">제외</button></div>
+      </div>
+      <p class="pf-note">로우베타 = 예적금·청약·현금·집처럼 원금 손실 없이 안정적인 자산, 하이베타 = 지수연동 ETF처럼 원금 손실이 날 수 있는 자산, 알파 = 개별 종목 직접투자.</p>
+      <div class="pf-riskbar dash-skeleton" id="risk-bar" data-source="risk_class"></div>
+      <div class="pf-riskrows" id="risk-rows"></div>
+      <p class="pf-note" id="nt-risk"></p>
+    </div>
+    <div class="pf-grid">
+      <div class="pf-card" id="card-home-growth">
+        <h2>원금 대비 자산 증가</h2>
+        <p class="pf-note">월말 누적 납입 원금과 장부 자산(원금+배당+이자). 가계부 기록 기준이며 시세 변동은 포함하지 않습니다.</p>
+        <div class="pf-legend" id="lg-home-growth"></div>
+        <div class="pf-chart dash-skeleton" id="ch-home-growth" data-source="periodic"></div>
+      </div>
+      <div class="pf-card" id="card-home-bench">
+        <h2>누적수익률 비교</h2>
+        <p class="pf-note" id="nt-home-bench">투자·연금 계좌에 넣은 금액을 그 달 지수에 똑같이 넣었다고 가정한 현재 가치입니다.</p>
+        <div class="pf-cmp" id="cmp-home" data-source="bench"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 자산 추이 -->
+  <section class="pf-page" id="trend" hidden>
+    <div class="pf-card" id="card-acct-eval">
+      <h2>계좌별 현재 평가금액 vs 투자원금</h2>
+      <p class="pf-note" id="nt-acct-eval">현재 평가 = 보유종목 × 최근 종가(월말 잔고가 더 크면 차액은 현금으로 가산) → 없으면 최근 월말 잔고 → 그것도 없으면 가계부 장부 금액. 원금보다 낮은 계좌는 빨간 막대로 표시합니다.</p>
+      <div class="pf-legend" id="lg-acct-eval"></div>
+      <div class="pf-chart dash-skeleton" id="ch-acct-eval" data-source="acct_eval"></div>
+      <div class="pf-tbl-wrap" style="margin-top:var(--cds-gap-md)">
+        <table class="pf-tbl" id="tb-acct-eval" data-source="acct_eval" data-row-key="account">
+          <thead><tr><th data-field="account">계좌</th><th data-field="principal">투자원금</th><th data-field="value">현재 평가</th><th data-field="gain">평가손익</th><th data-field="ret">수익률</th><th data-field="basis">평가 근거</th></tr></thead><tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="pf-card" id="card-bal">
+      <h2>월말 평가 잔고 vs 납입 원금</h2>
+      <p class="pf-note" id="nt-bal">구글 시트 계좌잔고 탭에 입력한 월말 잔고(평가금액) 기준. 원금은 그 날짜까지 가계부 누계 + 계좌목록의 원금 보정치입니다.</p>
+      <div class="pf-tbl-wrap">
+        <table class="pf-tbl" id="tb-bal" data-source="bal_latest" data-row-key="account">
+          <thead><tr><th data-field="account">계좌</th><th data-field="date">기준일</th><th data-field="balance_krw">월말 잔고</th><th data-field="principal">납입 원금</th><th data-field="gain">평가손익</th><th data-field="ret">수익률</th></tr></thead><tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="pf-card" id="card-flow">
+      <h2 id="h-flow">기간별 납입·배당·이자</h2>
+      <p class="pf-note">납입은 계좌로 들어간 원금(인출은 마이너스), 배당·이자는 계좌에서 발생한 금융소득입니다.</p>
+      <div class="pf-legend" id="lg-flow"></div>
+      <div class="pf-chart dash-skeleton" id="ch-flow" data-source="periodic"></div>
+    </div>
+    <div class="pf-card" id="card-cum">
+      <h2>누적 원금과 장부 자산</h2>
+      <p class="pf-note">기간 말 기준 누적값. 원금선과 장부 자산선의 간격이 배당·이자로 늘어난 자산입니다.</p>
+      <div class="pf-legend" id="lg-cum"></div>
+      <div class="pf-chart dash-skeleton" id="ch-cum" data-source="periodic"></div>
+    </div>
+    <div class="pf-card" id="card-accounts">
+      <h2>계좌별 현황</h2>
+      <p class="pf-note" id="nt-accounts">가계부 기준 잔액. 베트남 저축(VND)은 선택한 통화로 표시합니다.</p>
+      <div class="pf-tbl-wrap">
+        <table class="pf-tbl" id="tb-accounts" data-source="accounts_view" data-row-key="account">
+          <thead><tr>
+            <th data-field="account">계좌</th><th data-field="owner">소유</th><th data-field="group">구분</th><th data-field="start">개설일</th>
+            <th data-field="principal_krw">납입 원금</th><th data-field="dividend_krw">배당</th><th data-field="interest_krw">이자</th>
+            <th data-field="balance_show" id="th-bal">잔액</th>
+          </tr></thead><tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 배당 -->
+  <section class="pf-page" id="dividend" hidden>
+    <div class="pf-tiles">
+      <div class="pf-tile"><div class="lb">이번 달 배당</div><div class="v dash-skeleton" id="d-month" data-source="summary" data-field="month_dividend">—</div><div class="sub" id="d-month-sub"></div></div>
+      <div class="pf-tile"><div class="lb">올해 총 배당</div><div class="v dash-skeleton" id="d-ytd" data-source="summary" data-field="ytd_dividend">—</div></div>
+      <div class="pf-tile"><div class="lb">12개월 월평균 배당</div><div class="v dash-skeleton" id="d-avg" data-source="summary" data-field="ttm_avg_dividend">—</div></div>
+      <div class="pf-tile"><div class="lb">누적 배당 (2024~)</div><div class="v dash-skeleton" id="d-total" data-source="summary" data-field="dividend">—</div></div>
+    </div>
+    <div class="pf-card" id="card-divbar">
+      <h2 id="h-divbar">기간별 배당·분배금</h2>
+      <p class="pf-note" id="nt-divbar">세후 입금액 기준. 선은 직전 12개월 월평균(월 단위에서만 표시).</p>
+      <div class="pf-legend" id="lg-divbar"></div>
+      <div class="pf-chart dash-skeleton" id="ch-divbar" data-source="periodic"></div>
+    </div>
+    <div class="pf-grid">
+      <div class="pf-card" id="card-divcum">
+        <h2>배당금 누적</h2>
+        <p class="pf-note">2024년 1월 투자 시작 이후 받은 배당·분배금 누계</p>
+        <div class="pf-chart sm dash-skeleton" id="ch-divcum" data-source="periodic"></div>
+      </div>
+      <div class="pf-card" id="card-divyield">
+        <h2>연도별 배당과 원금 대비 배당률</h2>
+        <p class="pf-note">배당률 = 그해 배당 ÷ 연말 누적 원금(저축 포함 전체 원금)</p>
+        <div class="pf-tbl-wrap">
+          <table class="pf-tbl" id="tb-divyear" data-source="periodic" data-row-key="combo,gran,period">
+            <thead><tr><th data-field="period">연도</th><th data-field="dividend">배당</th><th data-field="cum_contrib">연말 원금</th><th data-field="div_yield">배당률</th></tr></thead><tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="pf-card" id="card-items">
+      <h2>종목별 배당 순위</h2>
+      <p class="pf-note">가계부 메모의 종목명으로 묶었습니다. 메모에 종목명이 없는 입금은 '종목 미표기'로 남겼습니다.</p>
+      <div class="pf-tbl-wrap">
+        <table class="pf-tbl" id="tb-items" data-source="div_items" data-row-key="combo,item">
+          <thead><tr><th data-field="item">종목</th><th data-field="ytd">올해</th><th data-field="total">누적</th><th data-field="count">횟수</th><th data-field="last_date">최근 입금</th></tr></thead><tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 지수 비교 -->
+  <section class="pf-page" id="bench" hidden>
+    <div class="pf-card" id="card-idxline">
+        <h2 id="h-idxline">주요지수 수익률 비교</h2>
+        <p class="pf-note" id="nt-idxline">선택 기간 시작을 0%로 맞춘 누적 수익률</p>
+        <div class="pf-legend" id="lg-idxline"></div>
+        <div class="pf-chart dash-skeleton" id="ch-idxline" data-source="idx bench"></div>
+        <div class="pf-rcards" id="rc-idx" data-source="idx bench"></div>
+      </div>
+    <div class="pf-card" id="card-bench">
+      <h2>내 납입금 vs 같은 돈을 지수에 넣었다면</h2>
+      <p class="pf-note" id="nt-bench">투자·연금 계좌의 월별 순납입액을 그 달 말 지수로 사고팔았다고 가정한 가치입니다.</p>
+      <div class="pf-legend" id="lg-bench"></div>
+      <div class="pf-chart dash-skeleton" id="ch-bench" data-source="bench"></div>
+    </div>
+    <div class="pf-grid">
+      <div class="pf-card" id="card-idxret">
+        <h2>기간별 지수 수익률</h2>
+        <p class="pf-note" id="nt-idxret">월말 종가 기준(이번 달은 최근 종가)</p>
+        <div class="pf-tbl-wrap">
+          <table class="pf-tbl" id="tb-idxret" data-source="index_returns" data-row-key="index,basis">
+            <thead><tr><th data-field="index">지수</th><th data-field="ytd">올해</th><th data-field="y1">1년</th><th data-field="y3">3년</th><th data-field="y5">5년</th><th data-field="since">투자 시작 이후</th></tr></thead><tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 포트폴리오 -->
+  <section class="pf-page" id="portfolio" hidden>
+    <div class="pf-tiles">
+      <div class="pf-tile"><div class="lb">보유종목 평가금액</div><div class="v dash-skeleton" id="p-value" data-source="hold_summary" data-field="hold_value">—</div><div class="sub">입력된 종목 기준</div></div>
+      <div class="pf-tile"><div class="lb">매입금액</div><div class="v dash-skeleton" id="p-cost" data-source="hold_summary" data-field="hold_cost">—</div></div>
+      <div class="pf-tile"><div class="lb">평가손익</div><div class="v dash-skeleton" id="p-gain" data-source="hold_summary" data-field="hold_gain">—</div><div class="sub" id="p-ret"></div></div>
+      <div class="pf-tile"><div class="lb">입력 커버리지</div><div class="v dash-skeleton" id="p-cov" data-source="hold_summary" data-field="coverage">—</div><div class="sub">매입금액 ÷ 투자·연금 원금</div></div>
+    </div>
+    <div class="pf-card" id="card-tree">
+      <h2>포트폴리오 비중</h2>
+      <p class="pf-note">평가금액(원화 환산) 기준</p>
+      <div class="pf-tree dash-skeleton" id="ch-tree" data-source="holdings_val"></div>
+    </div>
+    <div class="pf-card" id="card-risk-items">
+      <h2>분류별 구성 자산</h2>
+      <p class="pf-note">분류는 구글 시트에서 바꿉니다: 보유종목 탭 S열(종목별), 계좌목록 탭 F열(종목이 없는 계좌), 기타자산 탭(집 등). 원금은 종목=매입금액, 계좌=납입 원금입니다.</p>
+      <div class="pf-tbl-wrap">
+        <table class="pf-tbl" id="tb-risk-items" data-source="risk_items" data-row-key="key">
+          <thead><tr><th data-field="cls">분류</th><th data-field="item">자산</th><th data-field="account">계좌</th><th data-field="value">평가금액</th><th data-field="principal">원금</th><th data-source="risk_items" data-field="basis">기준</th></tr></thead><tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="pf-card" id="card-holdings">
+      <h2>보유 종목</h2>
+      <p class="pf-note" id="nt-holdings">현재가는 구글 시트 보유종목 탭 값(구글 금융·수동 입력), 없으면 최근 종가. 달러 종목의 원화 금액은 현재 환율로 환산했습니다.</p>
+      <div class="pf-tbl-wrap">
+        <table class="pf-tbl" id="tb-holdings" data-source="holdings_val" data-row-key="account,ticker">
+          <thead><tr>
+            <th data-field="name">종목</th><th data-field="account">계좌</th><th data-field="ticker">코드</th><th data-field="qty">수량</th><th data-field="avg_show" id="th-avg">평균단가</th>
+            <th data-field="price_show" id="th-price">현재가</th><th data-field="value_show" id="th-value">평가금액</th><th data-field="ret">수익률</th><th data-field="weight">비중</th>
+          </tr></thead><tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+  <!-- 시뮬레이션 -->
+  <section class="pf-page" id="sim" hidden>
+    <div class="pf-card" id="card-sim-ctl">
+      <h2>미래 자산 시뮬레이션</h2>
+      <p class="pf-note" id="nt-sim">과거 월간 수익률을 무작위로 다시 뽑아 만든 500가지 미래 경로로 2040년 1월(은퇴 목표)까지의 자산 범위를 추정합니다. 과거 흐름에 기댄 추정이며 미래 수익을 보장하지 않습니다.</p>
+      <div class="pf-grp pf-simgrp" id="ctl-sim-basis"><span>수익률 기준</span>
+        <button class="pf-btn" data-sim-basis="mix">내 자산 구성</button>
+        <button class="pf-btn" data-sim-basis="sp500">S&amp;P500</button>
+        <button class="pf-btn" data-sim-basis="nasdaq">나스닥</button>
+        <button class="pf-btn" data-sim-basis="kospi">KOSPI</button>
+      </div>
+      <div class="pf-grp pf-simgrp" id="ctl-sim-level"><span>월 납입액</span>
+        <button class="pf-btn" data-sim-level="avg" id="btn-sim-avg">최근 평균</button>
+        <button class="pf-btn" data-sim-level="0">0원</button>
+        <button class="pf-btn" data-sim-level="500000">50만</button>
+        <button class="pf-btn" data-sim-level="1000000">100만</button>
+        <button class="pf-btn" data-sim-level="2000000">200만</button>
+        <button class="pf-btn" data-sim-level="3000000">300만</button>
+      </div>
+    </div>
+    <div class="pf-tiles">
+      <div class="pf-tile"><div class="lb" id="lb-sim-end">2040년 1월 예상 자산 (중앙값)</div><div class="v dash-skeleton" id="s-end" data-source="sim_sum" data-field="end_p50">—</div><div class="sub" id="s-end-sub"></div></div>
+      <div class="pf-tile"><div class="lb">10억 원 목표 달성 확률</div><div class="v dash-skeleton" id="s-prob" data-source="sim_sum" data-field="goal_prob">—</div><div class="sub" id="s-prob-sub"></div></div>
+      <div class="pf-tile"><div class="lb">목표 도달 예상 시점</div><div class="v dash-skeleton" id="s-when" data-source="sim_sum" data-field="goal_month_p50">—</div><div class="sub" id="s-when-sub"></div></div>
+      <div class="pf-tile"><div class="lb">은퇴 시점 예상 월 배당</div><div class="v dash-skeleton" id="s-div" data-source="sim_sum" data-field="div_month">—</div><div class="sub" id="s-div-sub"></div></div>
+      <div class="pf-tile"><div class="lb">목표에 필요한 월 납입액</div><div class="v dash-skeleton" id="s-need" data-source="sim_sum" data-field="need50">—</div><div class="sub" id="s-need-sub"></div></div>
+    </div>
+    <div class="pf-card" id="card-sim-path">
+      <h2>예상 자산 범위</h2>
+      <p class="pf-note" id="nt-sim-path">연초마다 500개 경로 중 하위 10%·중앙값·상위 10% 자산과 누적 원금. 점선 가로선은 10억 원 목표입니다.</p>
+      <div class="pf-legend" id="lg-sim-path"></div>
+      <div class="pf-chart dash-skeleton" id="ch-sim-path" data-source="sim_path"></div>
+    </div>
+    <div class="pf-grid">
+      <div class="pf-card" id="card-sim-stress">
+        <h2>과거 하락장이 지금 온다면</h2>
+        <p class="pf-note">현재 자산 구성에 그 구간의 실제 월간 수익률을 그대로 적용한 손실(구간 중 최저점 기준)과, 구간 시작 수준을 되찾기까지 걸린 기간입니다.</p>
+        <div class="pf-tbl-wrap">
+          <table class="pf-tbl" id="tb-sim-stress" data-source="sim_stress" data-row-key="key">
+            <thead><tr><th data-field="scenario">구간</th><th data-field="period">기간</th><th data-field="drop">최대 하락</th><th data-field="loss">예상 손실</th><th data-field="recover_months">회복 기간</th></tr></thead><tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="pf-card" id="card-sim-mix">
+        <h2>시뮬레이션에 쓴 자산 구성</h2>
+        <p class="pf-note" id="nt-sim-mix">보유종목 이름으로 자산군을 나눴고(나스닥·테크 → 나스닥, S&amp;P·미국배당 → S&amp;P500, 채권혼합은 절반씩, 그 외 국내), 종목이 없는 투자 계좌는 전체 보유 비중을 따랐습니다. 월말 잔고 중 종목 밖 금액은 현금으로 봤습니다.</p>
+        <div class="pf-tbl-wrap">
+          <table class="pf-tbl" id="tb-sim-mix" data-source="sim_mix" data-row-key="key">
+            <thead><tr><th data-field="cls">자산군</th><th data-field="value">금액</th><th data-field="weight">비중</th><th data-field="cagr">과거 연평균</th><th data-field="vol">연 변동성</th></tr></thead><tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 리포트 -->
+  <section class="pf-page" id="report" hidden>
+    <div class="pf-card" id="card-report">
+      <h2>경제 전망 · 종목 이슈 리포트</h2>
+      <p class="pf-note" id="nt-report">매주 월요일 07:47 한국·미국 경제 전망, 평일 07:52 보유종목 이슈가 구글 시트 리포트 탭에 자동으로 쌓이고 여기에 표시됩니다. 정보 정리용이며 투자 권유가 아닙니다.</p>
+      <div class="pf-grp" id="ctl-report"><span>구분</span>
+        <button class="pf-btn" data-rep="전체">전체</button>
+        <button class="pf-btn" data-rep="경제전망">경제 전망</button>
+        <button class="pf-btn" data-rep="종목이슈">종목 이슈</button>
+      </div>
+      <div class="pf-replist dash-skeleton" id="rep-list" data-source="reports"></div>
+    </div>
+    <div class="pf-card" id="card-watch">
+      <h2>리포트 대상 종목</h2>
+      <p class="pf-note">데일리 종목 이슈는 아래 종목으로 작성합니다. 구글 시트 '관심종목' 탭에서 한 줄을 추가하면 종목이 늘고, 지우거나 '리포트 포함'을 N으로 바꾸면 빠집니다. 보유종목에 새로 넣은 종목은 이 목록에 없어도 자동으로 포함됩니다.</p>
+      <div class="pf-chips dash-skeleton" id="watch-list" data-source="watchlist"></div>
+      <a class="pf-editlink" href="#" target="_blank" rel="noopener noreferrer">구글 시트에서 종목 추가·삭제 ↗</a>
+    </div>
+  </section>
+
+  <nav class="pf-bnav" aria-label="화면 이동">
+    <button class="pf-tab" role="tab" data-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>홈</button>
+    <button class="pf-tab" role="tab" data-tab="trend"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>자산 추이</button>
+    <button class="pf-tab" role="tab" data-tab="dividend"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10.5c0-1 1-1.5 2.5-1.5s2.5.6 2.5 1.5-1 1.3-2.5 1.5-2.5.6-2.5 1.5 1 1.5 2.5 1.5 2.5-.5 2.5-1.5"/></svg>배당</button>
+    <button class="pf-tab" role="tab" data-tab="bench"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>지수 비교</button>
+    <button class="pf-tab" role="tab" data-tab="portfolio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg>포트폴리오</button>
+    <button class="pf-tab" role="tab" data-tab="sim"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18"/><path d="M4 16l5-5 3 3 7-7"/><path d="M14 7h5v5"/><path d="M4 12l5-4" stroke-dasharray="2 2"/></svg>시뮬</button>
+    <button class="pf-tab" role="tab" data-tab="report"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h7M9 16h7M9 8h3"/></svg>리포트</button>
+  </nav>
+</div>
+
+<script>
+// 시세 응답({result:"[...]"})을 행으로 펼치는 공통 로더
+const pfSeries = ({ answer }) => {
+  let a = answer;
+  if (a && Array.isArray(a.content)) a = a.content.map((c) => c.text || '').join('');
+  if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 200)); } }
+  let r = a && a.result !== undefined ? a.result : a;
+  if (typeof r === 'string') { try { r = JSON.parse(r); } catch (e) { throw new Error(r.slice(0, 200)); } }
+  if (!Array.isArray(r)) throw new Error('시세 응답이 목록이 아닙니다: ' + Object.keys(a || {}).join(', '));
+  return r.map((x) => ({
+    date: new Date(Date.parse(x.Date) + 12 * 3600e3).toISOString().slice(0, 10),
+    month: new Date(Date.parse(x.Date) + 12 * 3600e3).toISOString().slice(0, 7),
+    close: Number(x.Close),
+  }));
+};
+const pfDesc = 'Yahoo 시세 응답을 날짜·월·종가 행으로 펼침 (시차 보정 위해 12시간 더한 날짜 사용)';
+// 구글 시트 get_values 응답({range, values:[[...]]})을 행 배열로 꺼내는 공통 함수
+const pfSheetValues = (answer) => {
+  let a = answer;
+  if (a && Array.isArray(a.content)) a = a.content.map((c) => c.text || '').join('');
+  if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 200)); } }
+  if (a && a.structuredContent) a = a.structuredContent;
+  if (!a || (a.values !== undefined && !Array.isArray(a.values))) throw new Error('시트 응답에 values가 없습니다');
+  return a.values || [];
+};
+const pfNum = (x) => { const t = String(x ?? '').replace(/[,\s₩$%]/g, ''); return t === '' || isNaN(Number(t)) ? null : Number(t); };
+dash.loader('holdings', {
+  description: '구글 시트 보유종목 탭(A6:S65)의 각 줄을 소유자·계좌·종목명·코드·통화·수량·평균단가·시트 현재가(수동 입력 우선, 없으면 구글 금융)·자산 분류(S열, 수동) 행으로 펼침. 종목명이 빈 줄은 건너뜀',
+  fn: ({ answer }) => pfSheetValues(answer).filter((r) => r[2] && pfNum(r[5]) != null).map((r) => ({
+    owner: r[0], account: r[1], name: r[2], ticker: String(r[3] || '').replace(/^'/, ''), ccy: r[4] || 'KRW',
+    qty: pfNum(r[5]), avg_price: pfNum(r[6]), sheet_price: pfNum(r[9]) ?? pfNum(r[7]), cls_manual: String(r[18] || '').trim(),
+  })),
+});
+dash.loader('watchlist', {
+  description: '구글 시트 관심종목 탭(A2:F)의 각 줄을 종목명·코드·시장·리포트 포함(Y/N, 빈칸은 Y)·구분(보유/관심)·메모로 펼침. 종목명이 빈 줄은 건너뜀',
+  fn: ({ answer }) => pfSheetValues(answer).filter((r) => r[0]).map((r) => ({
+    name: r[0], code: String(r[1] || '').replace(/^'/, ''), market: r[2] || 'KRX', include: String(r[3] || 'Y').trim().toUpperCase() === 'N' ? 'N' : 'Y',
+    kind: r[4] || '관심', memo: r[5] || '',
+  })),
+});
+dash.loader('reports', {
+  description: '구글 시트 리포트 탭(A2:H)의 각 줄을 발행일·구분·제목·요약·본문(마크다운)·관련 종목·출처·ID로 펼침. 제목이 빈 줄은 건너뜀',
+  fn: ({ answer }) => pfSheetValues(answer).filter((r) => r[2]).map((r, i) => ({
+    date: String(r[0] || '').slice(0, 10), type: r[1] || '', title: r[2], summary: r[3] || '', body: r[4] || '',
+    tickers: r[5] || '', sources: r[6] || '', id: r[7] || `row${i + 2}`,
+  })),
+});
+dash.loader('balances', {
+  description: '구글 시트 계좌잔고 탭(A6:L500)의 월말 잔고 행을 기준일·계좌·소유자·구분·통화·현지 잔고·환율·원화 잔고·원금·배당 누계로 펼침. 월말 잔고가 비어 있는 줄은 건너뜀',
+  fn: ({ answer }) => pfSheetValues(answer).filter((r) => r[0] && r[1] && pfNum(r[7]) != null).map((r) => ({
+    date: String(r[0]).slice(0, 10), account: r[1], owner: r[2], group: r[3], ccy: r[4],
+    balance_native: pfNum(r[5]), fx: pfNum(r[6]), balance_krw: pfNum(r[7]), principal: pfNum(r[8]), dividend: pfNum(r[9]),
+  })),
+});
+dash.loader('kospi', { description: pfDesc, fn: pfSeries });
+dash.loader('sp500', { description: pfDesc, fn: pfSeries });
+dash.loader('nasdaq', { description: pfDesc, fn: pfSeries });
+dash.loader('usdkrw', { description: pfDesc, fn: pfSeries });
+dash.loader('usdvnd', { description: pfDesc, fn: pfSeries });
+dash.loader('px_088980', { description: pfDesc, fn: pfSeries });
+dash.loader('px_133690', { description: pfDesc, fn: pfSeries });
+dash.loader('px_161510', { description: pfDesc, fn: pfSeries });
+dash.loader('px_367380', { description: pfDesc, fn: pfSeries });
+dash.loader('px_368590', { description: pfDesc, fn: pfSeries });
+dash.loader('px_371870', { description: pfDesc, fn: pfSeries });
+dash.loader('px_379780', { description: pfDesc, fn: pfSeries });
+dash.loader('px_426030', { description: pfDesc, fn: pfSeries });
+dash.loader('px_446720', { description: pfDesc, fn: pfSeries });
+dash.loader('px_458730', { description: pfDesc, fn: pfSeries });
+dash.loader('px_474220', { description: pfDesc, fn: pfSeries });
+dash.loader('px_490490', { description: pfDesc, fn: pfSeries });
+
+dash.calc('idx', {
+  title: '지수·환율 월말값',
+  description: 'KOSPI·S&P500·NASDAQ·원/달러를 월별 마지막 값으로 정렬(2015년부터, 환율 100 미만 오류값 제외, 빈 달은 직전 값)',
+  inputs: ['kospi', 'sp500', 'nasdaq', 'usdkrw'],
+  fn: (kospi, sp500, nasdaq, usdkrw) => {
+    const by = (rows, ok) => { const m = new Map(); for (const r of rows) { if (ok && !ok(r.close)) continue; m.set(r.month, r.close); } return m; };
+    const maps = [['kospi', by(kospi)], ['sp500', by(sp500)], ['nasdaq', by(nasdaq)], ['usdkrw', by(usdkrw, (v) => v > 100)]];
+    const months = [...new Set(maps.flatMap(([, m]) => [...m.keys()]))].filter((x) => x >= '2015-01').sort();
+    const last = {}; const out = [];
+    for (const month of months) {
+      const row = { month };
+      for (const [k, m] of maps) { row[k] = m.has(month) ? m.get(month) : (last[k] ?? null); last[k] = row[k]; }
+      out.push(row);
+    }
+    return out;
+  },
+});
+
+dash.calc('periodic', {
+  title: '기간별 납입·배당·이자',
+  description: '투자 시작 2024-01 기준. 2023년 말까지의 잔액(원금+배당+이자)은 2024-01 기초 원금으로 넣고, 이후 흐름을 소유자 조합 × 월/분기/연으로 합산해 누계·12개월 평균 배당·원금 대비 배당률을 계산',
+  inputs: ['flows'],
+  fn: (flows) => {
+    const START = '2024-01';
+    const owners = ['본인', '이솔', '이서'];
+    const combos = [];
+    for (let b = 1; b < 8; b++) combos.push(owners.filter((_, i) => b & (1 << i)));
+    const months = [...new Set(flows.map((r) => r.month))].sort();
+    const all = []; let [y, m] = START.split('-').map(Number);
+    const [ey, em] = months[months.length - 1].split('-').map(Number);
+    while (y < ey || (y === ey && m <= em)) { all.push(`${y}-${String(m).padStart(2, '0')}`); m++; if (m > 12) { m = 1; y++; } }
+    const key = { '월': (x) => x, '분기': (x) => `${x.slice(0, 4)} Q${Math.ceil(Number(x.slice(5)) / 3)}`, '연': (x) => x.slice(0, 4) };
+    const out = [];
+    for (const c of combos) {
+      const per = new Map(all.map((x) => [x, { c: 0, d: 0, i: 0 }]));
+      for (const r of flows) {
+        if (!c.includes(r.owner)) continue;
+        const pre = r.month < START; const p = per.get(pre ? START : r.month); const v = Number(r.krw);
+        if (pre || r.kind === '납입') p.c += v; else if (r.kind === '배당') p.d += v; else p.i += v;
+      }
+      for (const g of ['월', '분기', '연']) {
+        const agg = new Map();
+        for (const x of all) {
+          const k = key[g](x); const a = agg.get(k) || { c: 0, d: 0, i: 0, end: x }; const p = per.get(x);
+          a.c += p.c; a.d += p.d; a.i += p.i; a.end = x; agg.set(k, a);
+        }
+        let cc = 0, cd = 0, ci = 0; const divs = []; let started = false;
+        for (const [period, a] of agg) {
+          if (!started && !a.c && !a.d && !a.i) continue; started = true;
+          cc += a.c; cd += a.d; ci += a.i; divs.push(a.d);
+          const last12 = divs.slice(-12);
+          out.push({ combo: c.join('+'), gran: g, period, end_month: a.end, contrib: a.c, dividend: a.d, interest: a.i,
+            cum_contrib: cc, cum_dividend: cd, cum_interest: ci, book: cc + cd + ci,
+            div_avg12: g === '월' ? last12.reduce((s, v) => s + v, 0) / 12 : null,
+            div_yield: cc > 0 ? a.d / cc : null });
+        }
+      }
+    }
+    return out;
+  },
+});
+
+dash.calc('bench', {
+  title: '같은 돈을 지수에 넣었다면',
+  description: '2024-01을 투자 시작으로, 2023년 말 투자·연금 잔액과 이후 월별 순납입액으로 그 달 말 지수를 샀다고 가정한 월별 가치(환율 반영판은 원/달러 변동 포함)',
+  inputs: ['flows', 'idx'],
+  fn: (flows, idx) => {
+    const START = '2024-01';
+    const owners = ['본인', '이솔', '이서'];
+    const out = [];
+    for (let b = 1; b < 8; b++) {
+      const c = owners.filter((_, i) => b & (1 << i));
+      const net = new Map(); const div = new Map();
+      for (const r of flows) {
+        if (!c.includes(r.owner) || (r.group !== '투자' && r.group !== '연금')) continue;
+        const pre = r.month < START; const mk = pre ? START : r.month;
+        const map = pre || r.kind === '납입' ? net : div;
+        map.set(mk, (map.get(mk) || 0) + Number(r.krw));
+      }
+      const first = [...net.keys()].sort()[0];
+      const u = { kospi: 0, sp500: 0, sp500_fx: 0, nasdaq: 0, nasdaq_fx: 0 };
+      let principal = 0, book = 0;
+      for (const row of idx) {
+        if (row.month < first) continue;
+        const v = net.get(row.month) || 0; principal += v; book += v + (div.get(row.month) || 0);
+        const px = { kospi: row.kospi, sp500: row.sp500, sp500_fx: row.sp500 * row.usdkrw, nasdaq: row.nasdaq, nasdaq_fx: row.nasdaq * row.usdkrw };
+        const o = { combo: c.join('+'), month: row.month, principal, book };
+        for (const k of Object.keys(u)) { if (v) u[k] += v / px[k]; o[k] = u[k] * px[k]; }
+        out.push(o);
+      }
+    }
+    return out;
+  },
+});
+
+dash.calc('index_returns', {
+  title: '기간별 지수 수익률',
+  description: '월말값으로 올해·1·3·5년·투자 시작(2023-12 말 기준) 이후 수익률. 환율 반영판은 원화로 환산한 S&P500·NASDAQ',
+  inputs: ['idx'],
+  fn: (idx) => {
+    const last = idx[idx.length - 1]; const at = (m) => idx.find((r) => r.month >= m) || idx[0];
+    const back = (n) => { const d = new Date(Date.UTC(Number(last.month.slice(0, 4)), Number(last.month.slice(5)) - 1 - n, 1)); return d.toISOString().slice(0, 7); };
+    const starts = { ytd: `${Number(last.month.slice(0, 4)) - 1}-12`, y1: back(12), y3: back(36), y5: back(60), since: '2023-12' };
+    const series = [['KOSPI', '기본', (r) => r.kospi], ['S&P500', '기본', (r) => r.sp500], ['NASDAQ', '기본', (r) => r.nasdaq], ['원/달러 환율', '기본', (r) => r.usdkrw],
+      ['KOSPI', '환율 반영', (r) => r.kospi], ['S&P500', '환율 반영', (r) => r.sp500 * r.usdkrw], ['NASDAQ', '환율 반영', (r) => r.nasdaq * r.usdkrw], ['원/달러 환율', '환율 반영', (r) => r.usdkrw]];
+    return series.map(([index, basis, f]) => {
+      const row = { index, basis };
+      for (const [k, m] of Object.entries(starts)) row[k] = f(last) / f(at(m)) - 1;
+      return row;
+    });
+  },
+});
+
+dash.calc('holdings_val', {
+  title: '보유종목 평가',
+  description: '보유 수량 × 현재가(구글 시트의 현재가 우선, 없으면 종목별 최근 종가). 달러 종목은 최근 원/달러 환율로 원화 환산(매입금액도 같은 환율 적용)',
+  inputs: ['holdings', 'px_088980', 'px_133690', 'px_161510', 'px_367380', 'px_368590', 'px_371870', 'px_379780', 'px_426030', 'px_446720', 'px_458730', 'px_474220', 'px_490490', 'usdkrw'],
+  fn: (holdings, px_088980, px_133690, px_161510, px_367380, px_368590, px_371870, px_379780, px_426030, px_446720, px_458730, px_474220, px_490490, usdkrw) => {
+    const last = (r) => (r.length ? r[r.length - 1].close : null);
+    const px = { '088980': last(px_088980), '133690': last(px_133690), '161510': last(px_161510), '367380': last(px_367380), '368590': last(px_368590), '371870': last(px_371870), '379780': last(px_379780), '426030': last(px_426030), '446720': last(px_446720), '458730': last(px_458730), '474220': last(px_474220), '490490': last(px_490490) };
+    const fx = last(usdkrw.filter((r) => r.close > 100));
+    return holdings.map((h) => {
+      const qty = Number(h.qty), avg = Number(h.avg_price), price = h.sheet_price ?? px[h.ticker] ?? null, rate = h.ccy === 'USD' ? fx : 1;
+      const value_krw = price == null ? null : qty * price * rate, cost_krw = qty * avg * rate;
+      return { ticker: h.ticker, name: h.name, owner: h.owner, account: h.account, ccy: h.ccy, qty, avg_price: avg, price, fx: rate, cls_manual: h.cls_manual || '',
+        value_native: price == null ? null : qty * price, value_krw, cost_krw,
+        gain_krw: value_krw == null ? null : value_krw - cost_krw, ret: value_krw == null ? null : value_krw / cost_krw - 1 };
+    });
+  },
+});
+
+dash.calc('bal_latest', {
+  title: '월말 평가 잔고 (최근 입력월)',
+  description: '계좌잔고 시트에 입력한 월말 잔고 중 계좌별 가장 최근 기준일 값과, 그 시점 납입 원금 대비 손익·수익률',
+  inputs: ['balances'],
+  fn: (balances) => {
+    const m = new Map();
+    for (const r of balances) { const p = m.get(r.account); if (!p || r.date > p.date) m.set(r.account, r); }
+    return [...m.values()].map((r) => ({ account: r.account, owner: r.owner, group: r.group, date: r.date, balance_krw: r.balance_krw,
+      principal: r.principal, gain: r.balance_krw - r.principal, ret: r.principal > 0 ? r.balance_krw / r.principal - 1 : null }))
+      .sort((x, y) => y.balance_krw - x.balance_krw);
+  },
+});
+
+dash.calc('accounts_view', {
+  title: '계좌별 잔액',
+  description: '계좌별 원금·배당·이자(2023년 말 잔액은 기초 원금으로 포함, 배당·이자는 2024년 이후)와 가계부 잔액. VND 계좌는 원/달러 ÷ 달러/동 최근 환율로 원화 환산',
+  inputs: ['accounts', 'flows', 'usdkrw', 'usdvnd'],
+  fn: (accounts, flows, usdkrw, usdvnd) => {
+    const START = '2024-01';
+    const last = (r) => (r.length ? r[r.length - 1].close : null);
+    const vndkrw = last(usdkrw.filter((r) => r.close > 100)) / last(usdvnd.filter((r) => r.close > 1000));
+    return accounts.map((a) => {
+      const fl = flows.filter((r) => r.account === a.account); const sum = (f) => fl.filter(f).reduce((s, r) => s + Number(r.krw), 0);
+      const principal_krw = sum((r) => r.month < START || r.kind === '납입');
+      const dividend_krw = sum((r) => r.month >= START && r.kind === '배당'), interest_krw = sum((r) => r.month >= START && r.kind === '이자');
+      return { ...a, principal_krw, dividend_krw, interest_krw, rate_krw: a.ccy === 'VND' ? vndkrw : 1,
+        balance_krw_now: a.ccy === 'VND' ? a.balance_native * vndkrw : a.balance_native,
+        ledger_krw: principal_krw + dividend_krw + interest_krw };
+    });
+  },
+});
+
+dash.calc('div_items', {
+  title: '종목별 배당 합계',
+  description: '배당 입금을 소유자 조합 × 종목으로 합산(누적·올해·횟수·최근 입금일)',
+  inputs: ['dividends'],
+  fn: (dividends) => {
+    const owners = ['본인', '이솔', '이서']; const year = dividends.map((r) => r.date).sort().pop().slice(0, 4); const out = [];
+    for (let b = 1; b < 8; b++) {
+      const c = owners.filter((_, i) => b & (1 << i)); const m = new Map();
+      for (const r of dividends) {
+        if (!c.includes(r.owner)) continue;
+        const a = m.get(r.item) || { combo: c.join('+'), item: r.item, total: 0, ytd: 0, count: 0, last_date: '' };
+        a.total += Number(r.krw); a.count += 1; if (r.date.slice(0, 4) === year) a.ytd += Number(r.krw); if (r.date > a.last_date) a.last_date = r.date;
+        m.set(r.item, a);
+      }
+      out.push(...[...m.values()].sort((x, y) => y.total - x.total));
+    }
+    return out;
+  },
+});
+
+dash.calc('goals', {
+  title: '목표 진행률',
+  description: '앱 화면의 목표값(연간 입금 1,800만 원, 최종 총자산 10억 원, 은퇴 2040년 1월)에 대한 진행률. 투자 시작 2024-01 기준',
+  inputs: ['summary', 'total_assets'],
+  fn: (summary, total_assets) => {
+    const ANNUAL = 18000000, FINAL = 1000000000, START = '2024-01', RETIRE = '2040-01';
+    const mon = (m) => Number(m.slice(0, 4)) * 12 + Number(m.slice(5, 7)) - 1;
+    return summary.map((s) => {
+      const t = total_assets.find((x) => x.combo === s.combo);
+      const done = mon(s.last_month) - mon(START) + 1, total = mon(RETIRE) - mon(START);
+      return { combo: s.combo, annual_goal: ANNUAL, ytd_contrib: s.ytd_contrib, annual_pct: s.ytd_contrib / ANNUAL,
+        final_goal: FINAL, total_value: t ? t.total_value : null, final_pct: t ? t.total_value / FINAL : null,
+        retire: RETIRE, months_done: done, months_total: total, retire_pct: done / total };
+    });
+  },
+});
+
+dash.calc('acct_eval', {
+  title: '계좌별 현재 평가 vs 투자원금',
+  description: '현재 평가 = 보유종목이 입력된 계좌는 종목 수량 × 최근 종가 합계(+ 월말 잔고가 종목 합계보다 크면 그 차액을 현금으로 가산), 없으면 최근 월말 잔고, 그것도 없으면 가계부 장부 잔액. 투자원금 = 월말 잔고 입력 계좌는 그 시점 원금(보정 포함), 나머지는 가계부 납입 누계',
+  inputs: ['accounts_view', 'accounts', 'bal_latest', 'holdings_val'],
+  fn: (accounts_view, accounts, bal_latest, holdings_val) => {
+    const bal = new Map(bal_latest.map((b) => [b.account, b])); const base = new Map(accounts.map((a) => [a.account, a]));
+    const hv = new Map();
+    for (const h of holdings_val) { if (h.value_krw == null) continue; hv.set(h.account, (hv.get(h.account) || 0) + h.value_krw); }
+    return accounts_view.map((a) => {
+      const b = bal.get(a.account); const h = hv.get(a.account);
+      const principal = b ? b.principal : base.get(a.account).principal_krw;
+      const gap = h != null && b ? b.balance_krw - h : null;
+      let value, basis;
+      if (h != null && gap != null && gap > 0) { value = h + gap; basis = '보유종목 시세 + 현금(월말 잔고 차액)'; }
+      else if (h != null) { value = h; basis = '보유종목 시세'; }
+      else if (b) { value = b.balance_krw; basis = b.date.slice(5).replace('-', '/') + ' 월말 잔고'; }
+      else { value = a.balance_krw_now; basis = '가계부 장부'; }
+      return { account: a.account, owner: a.owner, group: a.group, principal: Math.round(principal), value: Math.round(value),
+        gain: Math.round(value - principal), ret: principal > 0 ? value / principal - 1 : null, basis,
+        month_balance: b ? b.balance_krw : null, cash_est: gap != null && gap > 0 ? Math.round(gap) : null };
+    }).sort((x, y) => y.value - x.value);
+  },
+});
+
+dash.calc('total_assets', {
+  title: '총 자산 (평가 우선)',
+  description: '계좌별로 월말 평가 잔고(구글 시트 계좌잔고 탭)가 있으면 그 값, 없으면 가계부 장부 잔액을 더한 총 자산과, 같은 기준의 납입 원금(계좌 개설 이후 누계 + 원금 보정) 대비 손익',
+  inputs: ['accounts_view', 'accounts', 'bal_latest'],
+  fn: (accounts_view, accounts, bal_latest) => {
+    const owners = ['본인', '이솔', '이서']; const out = [];
+    const bal = new Map(bal_latest.map((b) => [b.account, b])); const base = new Map(accounts.map((a) => [a.account, a]));
+    for (let b = 1; b < 8; b++) {
+      const c = owners.filter((_, i) => b & (1 << i)); let value = 0, principal = 0, n_eval = 0, n_all = 0, as_of = '';
+      for (const a of accounts_view.filter((x) => c.includes(x.owner))) {
+        const e = bal.get(a.account); n_all += 1;
+        if (e) { value += e.balance_krw; principal += e.principal; n_eval += 1; if (e.date > as_of) as_of = e.date; }
+        else { value += a.balance_krw_now; principal += base.get(a.account).principal_krw; }
+      }
+      out.push({ combo: c.join('+'), total_value: Math.round(value), total_principal: Math.round(principal), total_gain: Math.round(value - principal),
+        total_ret: principal > 0 ? value / principal - 1 : null, n_eval, n_all, as_of });
+    }
+    return out;
+  },
+});
+
+dash.calc('summary', {
+  title: '요약 지표',
+  description: '소유자 조합별 원금(2023년 말 잔액 포함)·2024년 이후 배당·이자·장부 자산, 올해 납입/배당, 이번 달·12개월 평균 배당',
+  inputs: ['accounts_view', 'flows'],
+  fn: (accounts_view, flows) => {
+    const owners = ['본인', '이솔', '이서']; const out = [];
+    const lastMonth = flows.map((r) => r.month).sort().pop(); const year = lastMonth.slice(0, 4);
+    const d = new Date(Date.UTC(Number(year), Number(lastMonth.slice(5)) - 12, 1)).toISOString().slice(0, 7);
+    for (let b = 1; b < 8; b++) {
+      const c = owners.filter((_, i) => b & (1 << i)); const acc = accounts_view.filter((a) => c.includes(a.owner));
+      const fl = flows.filter((r) => c.includes(r.owner)); const sum = (rows, f) => rows.reduce((s, r) => s + f(r), 0);
+      const dividend = sum(acc, (a) => a.dividend_krw), interest = sum(acc, (a) => a.interest_krw);
+      out.push({ combo: c.join('+'), start: '2024-01-01', last_month: lastMonth,
+        principal: sum(acc, (a) => a.principal_krw), principal_inv: sum(acc.filter((a) => a.group !== '저축'), (a) => a.principal_krw),
+        dividend, interest, income: dividend + interest,
+        book_krw: Math.round(sum(acc, (a) => a.balance_krw_now)),
+        ytd_contrib: sum(fl.filter((r) => r.kind === '납입' && r.month.startsWith(year)), (r) => r.krw),
+        ytd_dividend: sum(fl.filter((r) => r.kind === '배당' && r.month.startsWith(year)), (r) => r.krw),
+        month_dividend: sum(fl.filter((r) => r.kind === '배당' && r.month === lastMonth), (r) => r.krw),
+        ttm_avg_dividend: Math.round(sum(fl.filter((r) => r.kind === '배당' && r.month > d), (r) => r.krw) / 12) });
+    }
+    return out;
+  },
+});
+
+dash.calc('hold_summary', {
+  title: '보유종목 평가 요약',
+  description: '소유자 조합별 입력 종목의 평가금액·매입금액·평가손익과, 매입금액 ÷ 투자·연금 원금(입력 커버리지)',
+  inputs: ['holdings_val', 'accounts_view'],
+  fn: (holdings_val, accounts_view) => {
+    const owners = ['본인', '이솔', '이서']; const out = [];
+    for (let b = 1; b < 8; b++) {
+      const c = owners.filter((_, i) => b & (1 << i)); const hv = holdings_val.filter((h) => c.includes(h.owner));
+      const hold_value = Math.round(hv.reduce((s, h) => s + (h.value_krw || 0), 0)), hold_cost = Math.round(hv.reduce((s, h) => s + h.cost_krw, 0));
+      const inv = accounts_view.filter((a) => c.includes(a.owner) && a.group !== '저축').reduce((s, a) => s + a.principal_krw, 0);
+      out.push({ combo: c.join('+'), hold_value, hold_cost, hold_gain: hold_value - hold_cost,
+        hold_ret: hold_cost ? hold_value / hold_cost - 1 : null, coverage: inv > 0 ? hold_cost / inv : null });
+    }
+    return out;
+  },
+});
+
+// ---------- 자산 분류 (로우베타·하이베타·알파) ----------
+dash.loader('acct_meta', {
+  description: '구글 시트 계좌목록 탭(A5:F44)의 계좌별 소유자·계좌·구분·통화·원금 보정·자산 분류(기본)를 펼침',
+  fn: ({ answer }) => pfSheetValues(answer).filter((r) => r[1]).map((r) => ({ owner: r[0], account: r[1], group: r[2] || '', ccy: r[3] || 'KRW', adj: pfNum(r[4]), cls: r[5] || '' })),
+});
+dash.loader('other_assets', {
+  description: '구글 시트 기타자산 탭(A2:G100)의 집 등 계좌 밖 자산을 자산명·소유자·분류·평가액·취득 원금·기준일·메모로 펼침. 평가액이 빈 줄은 건너뜀',
+  fn: ({ answer }) => pfSheetValues(answer).filter((r) => r[0] && pfNum(r[3]) != null).map((r) => ({ name: r[0], owner: r[1] || '본인', cls: r[2] || '로우베타', value: pfNum(r[3]), principal: pfNum(r[4]), date: String(r[5] || '').slice(0, 10), memo: r[6] || '' })),
+});
+dash.calc('risk_items', {
+  title: '자산 분류별 구성 항목',
+  description: '로우베타(원금 손실 없이 안정적: 예적금·청약·현금·집), 하이베타(지수연동 ETF 등 원금 손실 가능), 알파(개별 직접투자)로 나눈 항목. 보유종목은 시트의 수동 분류 → 없으면 이름이 ETF 브랜드(PLUS·RISE·SOL·TIGER·ACE·KODEX·TIME 등)면 하이베타, 아니면 알파. 월말 잔고 중 종목 밖 금액은 로우베타(현금). 종목이 없는 계좌는 계좌목록의 기본 분류(없으면 저축=로우베타, 그 외=하이베타). 기타자산 탭 항목 포함. 원금은 종목=매입금액, 계좌=납입 원금, 현금=같은 금액',
+  inputs: ['acct_eval', 'holdings_val', 'acct_meta', 'other_assets'],
+  fn: (acct_eval, holdings_val, acct_meta, other_assets) => {
+    const ETF = /^(PLUS|RISE|SOL|TIGER|ACE|KODEX|TIME|KBSTAR|HANARO|ARIRANG|KOSEF|KIWOOM|WON|BNK|1Q|HK|SCHD|SPY|QQQ|VOO|VTI|IVV|JEPI|DIA)\b|ETF/i;
+    const CLS = ['로우베타', '하이베타', '알파'];
+    const meta = new Map(acct_meta.map((m) => [m.account, m]));
+    const out = [];
+    for (const a of acct_eval) {
+      const hs = holdings_val.filter((h) => h.account === a.account && h.value_krw);
+      if (hs.length) {
+        let s = 0;
+        for (const h of hs) {
+          const cls = CLS.includes(h.cls_manual) ? h.cls_manual : (ETF.test(h.name) ? '하이베타' : '알파');
+          out.push({ key: `${a.account}|${h.ticker}|${h.name}`, owner: a.owner, account: a.account, item: h.name, cls, value: Math.round(h.value_krw), principal: Math.round(h.cost_krw), basis: '보유종목' });
+          s += h.value_krw;
+        }
+        if (a.value - s > 1) out.push({ key: `${a.account}|cash`, owner: a.owner, account: a.account, item: '현금·기타(월말 잔고 − 종목)', cls: '로우베타', value: Math.round(a.value - s), principal: Math.round(a.value - s), basis: '월말 잔고 차액' });
+      } else {
+        const m = meta.get(a.account); const cls = m && CLS.includes(m.cls) ? m.cls : (a.group === '저축' ? '로우베타' : '하이베타');
+        out.push({ key: `${a.account}|all`, owner: a.owner, account: a.account, item: '계좌 전체', cls, value: Math.round(a.value), principal: Math.round(a.principal), basis: a.basis });
+      }
+    }
+    for (const o of other_assets) {
+      out.push({ key: `기타|${o.name}`, owner: o.owner, account: '기타자산', item: o.name, cls: CLS.includes(o.cls) ? o.cls : '로우베타', value: Math.round(o.value), principal: Math.round(o.principal ?? o.value), basis: o.date ? `${o.date} 평가` : '기타자산 탭', other: true });
+    }
+    return out;
+  },
+});
+dash.calc('risk_class', {
+  title: '자산 분류별 합계',
+  description: '소유자 조합 × 기타자산(집 등) 포함 여부별로 로우베타·하이베타·알파의 평가금액·원금·손익·원금 대비 수익률·비중',
+  inputs: ['risk_items'],
+  fn: (risk_items) => {
+    const owners = ['본인', '이솔', '이서']; const CLS = ['로우베타', '하이베타', '알파']; const out = [];
+    for (let b = 1; b < 8; b++) {
+      const c = owners.filter((_, i) => b & (1 << i)); const combo = c.join('+');
+      for (const other of ['Y', 'N']) {
+        const it = risk_items.filter((x) => c.includes(x.owner) && (other === 'Y' || !x.other));
+        const total = it.reduce((s, x) => s + x.value, 0);
+        for (const cls of CLS) {
+          const r = it.filter((x) => x.cls === cls); const value = r.reduce((s, x) => s + x.value, 0), principal = r.reduce((s, x) => s + x.principal, 0);
+          out.push({ key: [combo, other, cls].join('|'), combo, other, cls, value, principal, gain: value - principal, ret: principal > 0 ? value / principal - 1 : null, share: total > 0 ? value / total : null, total, n: r.length });
+        }
+      }
+    }
+    return out;
+  },
+});
+</script>
+
+<script>
+// ---------- 시뮬레이션 계산 ----------
+dash.calc('sim_base', {
+  title: '시뮬레이션 기초값',
+  description: '2004년 이후 KOSPI·S&P500·NASDAQ(원화 환산) 월간 수익률을 같은 달끼리 묶어 무작위로 뽑는 몬테카를로 500개 경로(고정 시드). 소유자 조합별 현재 자산을 자산군(국내주식·미국S&P·나스닥·채권/현금 연 3%·저축 연 2.5%)으로 나누고 매달 그 비중으로 재조정한다고 가정. 지수는 가격지수라 배당을 따로 더해 재투자(국내 연 2.0%, S&P500 1.5%, 나스닥 0.8% 가정). 2040년 1월까지 현재 자산의 성장(A)과 매달 1원 납입분의 성장(B)을 연초마다 기록',
+  inputs: ['kospi', 'sp500', 'nasdaq', 'usdkrw', 'holdings_val', 'acct_eval', 'flows', 'summary'],
+  fn: (kospi, sp500, nasdaq, usdkrw, holdings_val, acct_eval, flows, summary) => {
+    const FROM = '2004-01', END = '2040-01', PATHS = 500, BOND_Y = 0.03, SAVE_Y = 0.025, DIV_Y = { kospi: 0.02, sp500: 0.015, nasdaq: 0.008 };
+    const owners = ['본인', '이솔', '이서'];
+    const mp = (rows, ok) => { const m = new Map(); for (const r of rows) if (!ok || ok(r.close)) m.set(r.month, r.close); return m; };
+    const K = mp(kospi), S = mp(sp500), N = mp(nasdaq), F = mp(usdkrw, (v) => v > 100);
+    const months = [...K.keys()].filter((m) => m >= FROM && S.has(m) && N.has(m) && F.has(m)).sort();
+    const ret = { kospi: [], sp500: [], nasdaq: [] }; const rm = [];
+    for (let i = 1; i < months.length; i++) {
+      const a = months[i - 1], b = months[i];
+      ret.kospi.push(K.get(b) / K.get(a) - 1);
+      ret.sp500.push((S.get(b) * F.get(b)) / (S.get(a) * F.get(a)) - 1);
+      ret.nasdaq.push((N.get(b) * F.get(b)) / (N.get(a) * F.get(a)) - 1);
+      rm.push(b);
+    }
+    const bondM = Math.pow(1 + BOND_Y, 1 / 12) - 1, saveM = Math.pow(1 + SAVE_Y, 1 / 12) - 1;
+    const dvM = { kospi: DIV_Y.kospi / 12, sp500: DIV_Y.sp500 / 12, nasdaq: DIV_Y.nasdaq / 12 };
+    const cls = (n) => (/채혼합|채권/.test(n) ? 'mix50' : /나스닥|테크/i.test(n) ? 'nasdaq' : /S&P|미국배당|다우존스/i.test(n) ? 'sp500' : 'kospi');
+    const addCls = (w, c, v) => { if (c === 'mix50') { w.sp500 += v / 2; w.bond += v / 2; } else w[c] += v; };
+    const gw = { kospi: 0, sp500: 0, nasdaq: 0, bond: 0, save: 0 };
+    for (const h of holdings_val) if (h.value_krw) addCls(gw, cls(h.name), h.value_krw);
+    const gsum = gw.kospi + gw.sp500 + gw.nasdaq + gw.bond || 1;
+    const lastM = flows.map((r) => r.month).sort().pop();
+    const lm = (m, k) => new Date(Date.UTC(Number(m.slice(0, 4)), Number(m.slice(5)) - 1 + k, 1)).toISOString().slice(0, 7);
+    const avgFrom = lm(lastM, -12), avgTo = lm(lastM, -1);
+    const mon = (m) => Number(m.slice(0, 4)) * 12 + Number(m.slice(5)) - 1;
+    const T = mon(END) - mon(lastM);
+    const cps = [0]; for (let y = Number(lastM.slice(0, 4)) + 1; y <= Number(END.slice(0, 4)); y++) cps.push(mon(`${y}-01`) - mon(lastM));
+    const labels = cps.map((t) => lm(lastM, t));
+    const out = [];
+    for (let b = 1; b < 8; b++) {
+      const c = owners.filter((_, i) => b & (1 << i)); const combo = c.join('+');
+      const w = { kospi: 0, sp500: 0, nasdaq: 0, bond: 0, save: 0 }; let principal = 0;
+      for (const a of acct_eval.filter((x) => c.includes(x.owner))) {
+        principal += a.principal; const v = a.value || 0;
+        if (a.group === '저축') { w.save += v; continue; }
+        const hs = holdings_val.filter((h) => h.account === a.account && h.value_krw);
+        if (hs.length) { let s = 0; for (const h of hs) { addCls(w, cls(h.name), h.value_krw); s += h.value_krw; } if (v - s > 0) w.bond += v - s; }
+        else if (/우리사주/.test(a.account)) w.kospi += v;
+        else for (const k of ['kospi', 'sp500', 'nasdaq', 'bond']) w[k] += v * gw[k] / gsum;
+      }
+      const value = w.kospi + w.sp500 + w.nasdaq + w.bond + w.save; if (!(value > 0)) continue;
+      const inv = value - w.save; const sm = summary.find((x) => x.combo === combo);
+      const dy = inv > 0 && sm ? (sm.ttm_avg_dividend || 0) / inv : 0;
+      const fl = flows.filter((r) => c.includes(r.owner) && r.kind === '납입' && r.month >= avgFrom && r.month <= avgTo);
+      const avg = Math.round(fl.reduce((s, r) => s + Number(r.krw), 0) / 12 / 10000) * 10000;
+      for (const basis of ['mix', 'sp500', 'nasdaq', 'kospi']) {
+        const f = basis === 'mix' ? { kospi: w.kospi / value, sp500: w.sp500 / value, nasdaq: w.nasdaq / value, bond: w.bond / value, save: w.save / value }
+          : { kospi: 0, sp500: 0, nasdaq: 0, bond: 0, save: w.save / value, [basis]: inv / value };
+        const fi = 1 - f.save;
+        let seed = 20261017 + b * 97 + basis.length * 13;
+        const rnd = () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+        const A = [], B = [];
+        for (let p = 0; p < PATHS; p++) {
+          let a = value, bb = 0; const ar = [a], br = [0]; let k = 1;
+          for (let t = 1; t <= T; t++) {
+            const i = Math.floor(rnd() * rm.length);
+            const R = f.kospi * (ret.kospi[i] + dvM.kospi) + f.sp500 * (ret.sp500[i] + dvM.sp500) + f.nasdaq * (ret.nasdaq[i] + dvM.nasdaq) + f.bond * bondM + f.save * saveM;
+            a *= 1 + R; bb = bb * (1 + R) + 1;
+            if (t === cps[k]) { ar.push(a); br.push(bb); k++; }
+          }
+          A.push(ar); B.push(br);
+        }
+        out.push({ combo, basis, start: lastM, labels, steps: cps, value, principal, avg_contrib: avg, div_yield_m: dy, fi,
+          w: basis === 'mix' ? w : { kospi: 0, sp500: 0, nasdaq: 0, bond: 0, save: w.save, [basis]: inv }, A, B,
+          sample: `${rm[0]}~${rm[rm.length - 1]}`, ret: basis === 'mix' ? { ...ret, months: rm, bondM, saveM, f } : { ...ret, months: rm, bondM, saveM, f } });
+      }
+    }
+    return out;
+  },
+});
+
+dash.calc('sim_path', {
+  title: '예상 자산 경로 (연초별)',
+  description: '시뮬레이션 기초값의 500개 경로에서 월 납입액 단계(최근 평균, 0·50만·100만·200만·300만 원)별로 연초마다 자산 = A + 납입액 × B를 구해 하위 10%·중앙값·상위 10%를 뽑고, 같은 시점 누적 원금(현재 원금 + 납입액 × 개월 수)을 함께 표시',
+  inputs: ['sim_base'],
+  fn: (sim_base) => {
+    const q = (s, p) => s[Math.min(s.length - 1, Math.max(0, Math.round(p * (s.length - 1))))];
+    const out = [];
+    for (const r of sim_base) {
+      const levels = [['avg', r.avg_contrib], ['0', 0], ['500000', 500000], ['1000000', 1000000], ['2000000', 2000000], ['3000000', 3000000]];
+      for (const [level, c] of levels) r.labels.forEach((month, k) => {
+        const v = r.A.map((a, p) => a[k] + c * r.B[p][k]).sort((x, y) => x - y);
+        out.push({ key: [r.combo, r.basis, level, month].join('|'), combo: r.combo, basis: r.basis, level, contrib: c, month,
+          p10: Math.round(q(v, 0.1)), p50: Math.round(q(v, 0.5)), p90: Math.round(q(v, 0.9)), principal: Math.round(r.principal + c * r.steps[k]) });
+      });
+    }
+    return out;
+  },
+});
+
+dash.calc('sim_sum', {
+  title: '2040년 1월 시뮬레이션 요약',
+  description: '월 납입액 단계별 2040년 1월 예상 자산(하위 10%·중앙값·상위 10%), 10억 원 목표 이상인 경로 비율, 중앙값 자산(저축 제외분)에 최근 12개월 내 배당수익률을 곱한 예상 월 배당, 경로의 50%·80%가 목표에 닿는 데 필요한 월 납입액(10만 원 단위 올림), 중앙값·하위 10% 경로가 목표를 처음 넘는 연초',
+  inputs: ['sim_base'],
+  fn: (sim_base) => {
+    const GOAL = 1000000000;
+    const q = (s, p) => s[Math.min(s.length - 1, Math.max(0, Math.round(p * (s.length - 1))))];
+    const out = [];
+    for (const r of sim_base) {
+      const k = r.labels.length - 1;
+      const need = r.A.map((a, p) => Math.max(0, (GOAL - a[k]) / r.B[p][k])).sort((x, y) => x - y);
+      const up = (v) => Math.ceil(v / 100000) * 100000;
+      const levels = [['avg', r.avg_contrib], ['0', 0], ['500000', 500000], ['1000000', 1000000], ['2000000', 2000000], ['3000000', 3000000]];
+      for (const [level, c] of levels) {
+        const v = r.A.map((a, p) => a[k] + c * r.B[p][k]).sort((x, y) => x - y);
+        const p50 = q(v, 0.5);
+        let gm50 = null, gm10 = null;
+        for (let j = 0; j <= k; j++) {
+          const vj = r.A.map((a, p) => a[j] + c * r.B[p][j]).sort((x, y) => x - y);
+          if (gm50 == null && q(vj, 0.5) >= GOAL) gm50 = r.labels[j];
+          if (gm10 == null && q(vj, 0.1) >= GOAL) gm10 = r.labels[j];
+        }
+        out.push({ key: [r.combo, r.basis, level].join('|'), combo: r.combo, basis: r.basis, level, contrib: c, avg_contrib: r.avg_contrib,
+          end_month: r.labels[k], value_now: Math.round(r.value), principal_end: Math.round(r.principal + c * r.steps[k]),
+          end_p10: Math.round(q(v, 0.1)), end_p50: Math.round(p50), end_p90: Math.round(q(v, 0.9)),
+          goal: GOAL, goal_prob: v.filter((x) => x >= GOAL).length / v.length,
+          div_month: Math.round(p50 * r.fi * r.div_yield_m), div_yield_y: r.div_yield_m * 12,
+          need50: up(q(need, 0.5)), need80: up(q(need, 0.8)), goal_month_p50: gm50, goal_month_p10: gm10, sample: r.sample });
+      }
+    }
+    return out;
+  },
+});
+
+dash.calc('sim_stress', {
+  title: '과거 하락장 재현',
+  description: '현재 자산 구성(자산군 비중)에 과거 하락 구간의 실제 월간 수익률을 그대로 적용한 손실과, 구간 시작 수준을 다시 회복하기까지 걸린 개월 수(이후 실제 수익률 기준, 배당 제외)',
+  inputs: ['sim_base'],
+  fn: (sim_base) => {
+    const SC = [['2008 금융위기', '2007-11', '2009-02'], ['2020 코로나', '2020-02', '2020-03'], ['2022 금리 급등', '2022-01', '2022-09']];
+    const out = [];
+    for (const r of sim_base) {
+      const R = r.ret; const f = R.f;
+      const mr = (i) => f.kospi * R.kospi[i] + f.sp500 * R.sp500[i] + f.nasdaq * R.nasdaq[i] + f.bond * R.bondM + f.save * R.saveM;
+      for (const [name, s, e] of SC) {
+        const i0 = R.months.indexOf(s), i1 = R.months.indexOf(e); if (i0 < 0 || i1 < 0) continue;
+        let g = 1, low = 1; for (let i = i0; i <= i1; i++) { g *= 1 + mr(i); low = Math.min(low, g); }
+        let h = 1, rec = null; for (let i = i0; i < R.months.length; i++) { h *= 1 + mr(i); if (i > i1 && h >= 1) { rec = i - i0 + 1; break; } }
+        out.push({ key: [r.combo, r.basis, name].join('|'), combo: r.combo, basis: r.basis, scenario: name, period: `${s.replace('-', '.')}~${e.replace('-', '.')}`,
+          drop: low - 1, value_now: Math.round(r.value), loss: Math.round(r.value * (low - 1)), recover_months: rec });
+      }
+    }
+    return out;
+  },
+});
+
+dash.calc('sim_mix', {
+  title: '자산군 구성과 과거 성과',
+  description: '소유자 조합별 현재 자산의 자산군 금액·비중과 각 자산군의 표본기간 연평균 수익률(원화 환산, 배당 제외)·연 변동성. 채권/현금 연 3%, 저축 연 2.5%는 고정 가정',
+  inputs: ['sim_base'],
+  fn: (sim_base) => {
+    const NAME = { kospi: '국내주식 (KOSPI)', sp500: '미국 대형·배당 (S&P500)', nasdaq: '미국 기술 (나스닥)', bond: '채권·현금 (연 3% 가정)', save: '저축 (연 2.5% 가정)' };
+    const out = [];
+    for (const r of sim_base.filter((x) => x.basis === 'mix')) {
+      const R = r.ret; const n = R.months.length;
+      const st = (a) => { const g = a.reduce((p, x) => p * (1 + x), 1); const m = a.reduce((s, x) => s + x, 0) / n; const sd = Math.sqrt(a.reduce((s, x) => s + (x - m) ** 2, 0) / (n - 1)); return [Math.pow(g, 12 / n) - 1, sd * Math.sqrt(12)]; };
+      for (const k of ['kospi', 'sp500', 'nasdaq', 'bond', 'save']) {
+        const [cagr, vol] = k === 'bond' ? [0.03, 0] : k === 'save' ? [0.025, 0] : st(R[k]);
+        out.push({ key: [r.combo, k].join('|'), combo: r.combo, cls: NAME[k], value: Math.round(r.w[k]), weight: r.w[k] / r.value, cagr, vol });
+      }
+    }
+    return out;
+  },
+});
+</script>
+
+<script>
+// ---------- 공통 ----------
+const W = window;
+W.pfOwners = ['본인', '이솔', '이서'];
+W.pfCombo = () => { const o = dash.params().owners || W.pfOwners; const c = W.pfOwners.filter((x) => o.includes(x)); return (c.length ? c : W.pfOwners).join('+'); };
+const won = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 });
+W.pfWon = (v) => (v == null || isNaN(v) ? '—' : won.format(Math.round(v)) + '원');
+W.pfShort = (v) => {
+  if (v == null || isNaN(v)) return '—'; const a = Math.abs(v), s = v < 0 ? '-' : '';
+  if (a >= 1e8) return s + (a / 1e8).toFixed(a >= 1e9 ? 1 : 2) + '억';
+  if (a >= 1e4) return s + won.format(Math.round(a / 1e4)) + '만';
+  return s + won.format(Math.round(a));
+};
+W.pfPct = (v, sign = true) => (v == null || isNaN(v) ? '—' : (sign && v > 0 ? '+' : '') + (v * 100).toFixed(1) + '%');
+W.pfSign = (el, v) => { el.classList.toggle('pf-pos', v > 0); el.classList.toggle('pf-neg', v < 0); };
+W.pfFail = (el) => { el.replaceChildren(); const d = document.createElement('div'); d.className = 'pf-fail'; d.textContent = 'Failed to load'; el.append(d); el.classList.remove('dash-skeleton'); };
+W.pfRangeStart = (endMonth) => {
+  const r = dash.params().range || '전체'; const n = { '1년': 12, '3년': 36, '5년': 60 }[r]; if (!n) return '0000-00';
+  const d = new Date(Date.UTC(Number(endMonth.slice(0, 4)), Number(endMonth.slice(5)) - 1 - n + 1, 1)); return d.toISOString().slice(0, 7);
+};
+W.pfMonthDate = (m) => new Date(Date.UTC(Number(m.slice(0, 4)), Number(m.slice(5)) - 1, 15));
+
+W.pfLegend = (el, items) => {
+  el.replaceChildren(...items.map((it) => { const s = document.createElement('span'); const i = document.createElement('i');
+    if (it.dash) { i.style.background = `repeating-linear-gradient(90deg, ${it.color} 0 5px, transparent 5px 8px)`; } else i.style.background = it.color;
+    s.append(i, document.createTextNode(it.name)); return s; }));
+};
+
+W.pfTip = (box) => { let t = box.querySelector('.pf-tip'); if (!t) { t = document.createElement('div'); t.className = 'pf-tip'; box.append(t); } return t; };
+W.pfTipShow = (box, tip, x, y, title, lines) => {
+  tip.replaceChildren();
+  const h = document.createElement('div'); h.className = 't'; h.textContent = title; tip.append(h);
+  for (const l of lines) { const d = document.createElement('div'); if (l.color) { const i = document.createElement('i'); i.style.background = l.color; d.append(i); } d.append(document.createTextNode(l.name + '  ' + l.value)); tip.append(d); }
+  tip.style.display = 'block';
+  const bw = box.clientWidth, tw = tip.offsetWidth; let left = x + 14; if (left + tw > bw) left = Math.max(0, x - tw - 14);
+  tip.style.left = left + 'px'; tip.style.top = Math.max(0, y - 10) + 'px';
+};
+
+// 라인 차트: series=[{name,color,dash,values:[{x:Date,y,label}]}]
+W.pfLine = (box, series, o = {}) => {
+  box.querySelectorAll('svg').forEach((s) => s.remove());
+  const width = Math.max(280, box.clientWidth), height = o.height || (box.clientWidth < 500 ? 220 : 260); const fmt = o.fmt || W.pfShort;
+  const all = series.flatMap((s) => s.values).filter((p) => p.y != null && isFinite(p.y));
+  if (!all.length) return;
+  const x = d3.scaleUtc(d3.extent(all, (p) => p.x), [0, 1]);
+  let [lo, hi] = d3.extent(all, (p) => p.y); if (o.zero !== false) lo = Math.min(0, lo); if (lo === hi) hi = lo + 1;
+  const y0 = d3.scaleLinear([lo, hi], [height - 24, 8]).nice(5);
+  const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${width} ${height}`).style('display', 'block');
+  const yt = y0.ticks(5); const tmp = svg.append('g').attr('font-size', 11);
+  const ml = Math.ceil(d3.max(yt, (t) => { const n = tmp.append('text').text(fmt(t)).node(); const w = n.getComputedTextLength(); return w; })) + 10; tmp.remove();
+  const mr = o.endLabels ? 8 : 8;
+  x.range([ml, width - mr]);
+  const g = svg.append('g');
+  g.selectAll('line.gr').data(yt).join('line').attr('x1', ml).attr('x2', width - mr).attr('y1', (t) => y0(t)).attr('y2', (t) => y0(t)).attr('stroke', 'var(--cds-chart-grid)').attr('stroke-dasharray', '3 4');
+  g.selectAll('text.yt').data(yt).join('text').attr('x', ml - 6).attr('y', (t) => y0(t) + 4).attr('text-anchor', 'end').attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text((t) => fmt(t));
+  const xt = x.ticks(Math.max(2, Math.floor((width - ml) / 90)));
+  g.selectAll('text.xt').data(xt).join('text').attr('x', (t) => x(t)).attr('y', height - 6).attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text((t) => o.xfmt ? o.xfmt(t) : d3.utcFormat('%Y.%m')(t));
+  if (lo < 0) g.append('line').attr('x1', ml).attr('x2', width - mr).attr('y1', y0(0)).attr('y2', y0(0)).attr('stroke', 'var(--cds-chart-axis)');
+  const line = d3.line().defined((p) => p.y != null && isFinite(p.y)).x((p) => x(p.x)).y((p) => y0(p.y)).curve(d3.curveMonotoneX);
+  const area = d3.area().defined((p) => p.y != null && isFinite(p.y)).x((p) => x(p.x)).y0(y0(Math.max(lo, Math.min(0, hi)))).y1((p) => y0(p.y)).curve(d3.curveMonotoneX);
+  const uid = 'g' + Math.random().toString(36).slice(2, 8);
+  series.forEach((s, si) => {
+    if (s.area) {
+      const gid = uid + si; const gr = svg.append('defs').append('linearGradient').attr('id', gid).attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
+      [[0, .22], [.5, .08], [1, 0]].forEach(([o2, a]) => gr.append('stop').attr('offset', o2).attr('stop-color', s.color).attr('stop-opacity', a));
+      svg.append('path').attr('d', area(s.values)).attr('fill', `url(#${gid})`);
+    }
+  });
+  for (const s of [...series].reverse()) {
+    svg.append('path').attr('d', line(s.values)).attr('fill', 'none').attr('stroke', s.color).attr('stroke-width', s.width || 2.2)
+      .attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round').attr('stroke-dasharray', s.dash ? '6 5' : null);
+    const lv = [...s.values].reverse().find((p) => p.y != null && isFinite(p.y));
+    if (lv && !s.dash) svg.append('circle').attr('cx', x(lv.x)).attr('cy', y0(lv.y)).attr('r', 4).attr('fill', s.color).attr('stroke', 'var(--color-panel)').attr('stroke-width', 2);
+  }
+  const hover = svg.append('g').style('display', 'none');
+  const rule = hover.append('line').attr('y1', 8).attr('y2', height - 24).attr('stroke', 'var(--cds-chart-reference)');
+  const dots = series.map((s) => hover.append('circle').attr('r', 3.5).attr('fill', s.color));
+  const tip = W.pfTip(box); const xs = series[0].values.map((p) => p.x); const bis = d3.bisector((d) => d).center;
+  const lineMove = (ev) => {
+    const [mx, my] = d3.pointer(ev); const i = bis(xs, x.invert(mx)); const xv = xs[i]; if (!xv) return;
+    hover.style('display', null); rule.attr('x1', x(xv)).attr('x2', x(xv));
+    const lines = [];
+    series.forEach((s, k) => { const p = s.values[i]; if (p && p.y != null && isFinite(p.y)) { dots[k].attr('cx', x(xv)).attr('cy', y0(p.y)).style('display', null); lines.push({ color: s.color, name: s.name, value: o.tipFmt ? o.tipFmt(p.y) : W.pfWon(p.y) }); } else dots[k].style('display', 'none'); });
+    W.pfTipShow(box, tip, x(xv) * box.clientWidth / width, my * box.clientWidth / width, o.tipTitle ? o.tipTitle(xv, i) : d3.utcFormat('%Y년 %m월')(xv), lines);
+  };
+  svg.on('pointermove', lineMove).on('pointerdown', lineMove).on('pointerleave', (ev) => { if (ev.pointerType === 'touch') return; hover.style('display', 'none'); tip.style.display = 'none'; });
+};
+
+// 막대 차트(누적, 음수 허용): cats=[{label,date}], series=[{name,color,values:[]}], line 옵션
+W.pfBars = (box, cats, series, o = {}) => {
+  box.querySelectorAll('svg').forEach((s) => s.remove());
+  const width = Math.max(280, box.clientWidth), height = o.height || (box.clientWidth < 500 ? 220 : 260); const fmt = W.pfShort;
+  if (!cats.length) return;
+  const pos = cats.map((_, i) => series.reduce((s, se) => s + Math.max(0, se.values[i] || 0), 0));
+  const neg = cats.map((_, i) => series.reduce((s, se) => s + Math.min(0, se.values[i] || 0), 0));
+  const lineVals = o.line ? o.line.values.filter((v) => v != null) : [];
+  let hi = Math.max(d3.max(pos), d3.max(lineVals) || 0), lo = Math.min(0, d3.min(neg)); if (hi === lo) hi = lo + 1;
+  const y0 = d3.scaleLinear([lo, hi], [height - 24, 8]).nice(5); const yt = y0.ticks(5);
+  const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${width} ${height}`).style('display', 'block');
+  const tmp = svg.append('g').attr('font-size', 11);
+  const ml = Math.ceil(d3.max(yt, (t) => tmp.append('text').text(fmt(t)).node().getComputedTextLength())) + 10; tmp.remove();
+  const x = d3.scaleBand(cats.map((c) => c.label), [ml, width - 8]).padding(cats.length > 60 ? 0.15 : 0.3);
+  const g = svg.append('g');
+  g.selectAll('line').data(yt).join('line').attr('x1', ml).attr('x2', width - 8).attr('y1', (t) => y0(t)).attr('y2', (t) => y0(t)).attr('stroke', (t) => (t === 0 ? 'var(--cds-chart-axis)' : 'var(--cds-chart-grid)'));
+  g.selectAll('text').data(yt).join('text').attr('x', ml - 6).attr('y', (t) => y0(t) + 4).attr('text-anchor', 'end').attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text((t) => fmt(t));
+  const every = Math.max(1, Math.ceil(cats.length / Math.max(2, Math.floor((width - ml) / 64))));
+  svg.append('g').selectAll('text').data(cats.filter((_, i) => i % every === 0)).join('text').attr('x', (c) => x(c.label) + x.bandwidth() / 2).attr('y', height - 6).attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text((c) => c.tick || c.label);
+  const bw = Math.min(32, x.bandwidth()); const off = (x.bandwidth() - bw) / 2; const rx = Math.min(4, bw / 2);
+  cats.forEach((c, i) => {
+    let up = 0, dn = 0;
+    for (const se of series) {
+      const v = se.values[i] || 0; if (!v) continue;
+      const a = v > 0 ? up : dn, b = a + v; if (v > 0) up = b; else dn = b;
+      svg.append('rect').attr('x', x(c.label) + off).attr('width', bw).attr('y', y0(Math.max(a, b))).attr('height', Math.max(0.5, Math.abs(y0(a) - y0(b)))).attr('fill', o.hiLast && i === cats.length - 1 ? o.hiLast : se.color).attr('rx', rx);
+    }
+  });
+  if (cats.length <= 14 && series.length === 1) {
+    svg.append('g').selectAll('text').data(cats).join('text').attr('x', (c) => x(c.label) + x.bandwidth() / 2).attr('y', (_, i) => y0(Math.max(0, series[0].values[i] || 0)) - 5)
+      .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 600).attr('fill', 'var(--color-fg-muted)').text((_, i) => (series[0].values[i] ? W.pfShort(series[0].values[i]) : ''));
+  }
+  if (o.line) {
+    const ln = d3.line().defined((v) => v != null).x((_, i) => x(cats[i].label) + x.bandwidth() / 2).y((v) => y0(v));
+    svg.append('path').attr('d', ln.curve(d3.curveMonotoneX)(o.line.values)).attr('fill', 'none').attr('stroke', o.line.color).attr('stroke-width', 2.5).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+  }
+  const hl = svg.append('rect').attr('fill', 'var(--cds-chart-grid)').attr('opacity', 0.5).style('display', 'none').lower();
+  const tip = W.pfTip(box);
+  const barMove = (ev) => {
+    const [mx, my] = d3.pointer(ev); const i = Math.floor((mx - ml) / x.step()); const c = cats[i]; if (!c) return;
+    hl.style('display', null).attr('x', x(c.label) - x.step() * x.paddingInner() / 2).attr('width', x.step()).attr('y', 8).attr('height', height - 32);
+    const lines = series.map((se) => ({ color: se.color, name: se.name, value: W.pfWon(se.values[i] || 0) }));
+    if (o.line && o.line.values[i] != null) lines.push({ color: o.line.color, name: o.line.name, value: W.pfWon(o.line.values[i]) });
+    W.pfTipShow(box, tip, mx * box.clientWidth / width, my * box.clientWidth / width, c.label, lines);
+  };
+  svg.on('pointermove', barMove).on('pointerdown', barMove).on('pointerleave', (ev) => { if (ev.pointerType === 'touch') return; hl.style('display', 'none'); tip.style.display = 'none'; });
+};
+
+// 가로 막대(원금 vs 평가): rows=[{label, a, b}]
+W.pfPair = (box, rows, o) => {
+  box.querySelectorAll('svg').forEach((n) => n.remove());
+  if (!rows.length) return;
+  const width = Math.max(280, box.clientWidth), rowH = 34, top = 4, height = top + rows.length * rowH + 22;
+  const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${width} ${height}`).style('display', 'block');
+  const tmp = svg.append('g').attr('font-size', 12);
+  const lw = Math.min(width * 0.42, Math.ceil(d3.max(rows, (r) => tmp.append('text').text(r.label).node().getComputedTextLength())) + 10); tmp.remove();
+  const x = d3.scaleLinear([0, d3.max(rows, (r) => Math.max(r.a, r.b)) || 1], [lw, width - 8]).nice(4);
+  svg.append('g').selectAll('line').data(x.ticks(4)).join('line').attr('x1', (t) => x(t)).attr('x2', (t) => x(t)).attr('y1', top).attr('y2', height - 22).attr('stroke', 'var(--cds-chart-grid)');
+  svg.append('g').selectAll('text').data(x.ticks(4)).join('text').attr('x', (t) => x(t)).attr('y', height - 6).attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text((t) => W.pfShort(t));
+  const g = svg.append('g').selectAll('g').data(rows).join('g').attr('transform', (_, i) => `translate(0,${top + i * rowH})`);
+  g.append('text').attr('x', lw - 8).attr('y', rowH / 2 + 4).attr('text-anchor', 'end').attr('font-size', 12).attr('fill', 'var(--color-fg)').text((r) => r.label);
+  g.append('rect').attr('x', x(0)).attr('y', 5).attr('height', 10).attr('rx', 3).attr('width', (r) => Math.max(0, x(r.a) - x(0))).attr('fill', o.colorA);
+  g.append('rect').attr('x', x(0)).attr('y', 17).attr('height', 10).attr('rx', 3).attr('width', (r) => Math.max(0, x(r.b) - x(0))).attr('fill', (r) => (r.b >= r.a ? o.colorB : 'var(--cds-chart-status-critical)'));
+  const tip = W.pfTip(box);
+  const show = (ev, r) => { const [mx, my] = d3.pointer(ev, svg.node()); W.pfTipShow(box, tip, mx * box.clientWidth / width, my * box.clientWidth / width, r.label, [{ color: o.colorA, name: o.nameA, value: W.pfWon(r.a) }, { color: o.colorB, name: o.nameB, value: W.pfWon(r.b) }, { name: '수익률', value: W.pfPct(r.a > 0 ? r.b / r.a - 1 : null) }]); };
+  g.append('rect').attr('x', 0).attr('y', 0).attr('width', width).attr('height', rowH).attr('fill', 'transparent')
+    .on('pointermove', show).on('pointerdown', show).on('pointerleave', (ev) => { if (ev.pointerType !== 'touch') tip.style.display = 'none'; });
+};
+
+// ---------- 컨트롤 ----------
+W.pfSetBtns = () => {
+  const p = dash.params(); const owners = p.owners || W.pfOwners;
+  document.querySelectorAll('[data-owner]').forEach((b) => b.setAttribute('aria-pressed', String(owners.includes(b.dataset.owner))));
+  document.querySelectorAll('[data-gran]').forEach((b) => b.setAttribute('aria-pressed', String((p.gran || '월') === b.dataset.gran)));
+  document.querySelectorAll('[data-range]').forEach((b) => b.setAttribute('aria-pressed', String((p.range || '전체') === b.dataset.range)));
+  document.querySelectorAll('[data-fx]').forEach((b) => b.setAttribute('aria-pressed', String((p.fx || 'krw') === b.dataset.fx)));
+  const sum = document.getElementById('pf-filter-sum');
+  if (sum) sum.textContent = `· ${p.gran || '월'} · ${(p.range || '전체') === '전체' ? '2024~' : p.range} · ${(p.fx || 'krw') === 'krw' ? '원화' : '현지'}`;
+};
+document.querySelectorAll('[data-owner]').forEach((b) => b.addEventListener('click', () => {
+  const cur = dash.params().owners || W.pfOwners; const o = b.dataset.owner;
+  let next = cur.includes(o) ? cur.filter((x) => x !== o) : [...cur, o]; if (!next.length) next = [o];
+  dash.setParams({ owners: W.pfOwners.filter((x) => next.includes(x)) });
+}));
+document.querySelectorAll('[data-gran]').forEach((b) => b.addEventListener('click', () => dash.setParams({ gran: b.dataset.gran })));
+document.querySelectorAll('[data-range]').forEach((b) => b.addEventListener('click', () => dash.setParams({ range: b.dataset.range })));
+document.querySelectorAll('[data-fx]').forEach((b) => b.addEventListener('click', () => dash.setParams({ fx: b.dataset.fx })));
+
+const fb = document.getElementById('pf-filter');
+fb.addEventListener('click', () => { const c = document.querySelector('.pf-ctrl'); const o = !c.classList.contains('open'); c.classList.toggle('open', o); fb.setAttribute('aria-expanded', String(o)); });
+document.addEventListener('pointerdown', (ev) => { if (!ev.target.closest('.pf-chart, .pf-tree')) document.querySelectorAll('.pf-tip').forEach((t) => { t.style.display = 'none'; }); });
+W.pfTab = 'home';
+W.pfShowTab = (id, push) => {
+  W.pfTab = id;
+  document.querySelectorAll('.pf-tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === id)));
+  document.querySelectorAll('.pf-page').forEach((s) => { s.hidden = s.id !== id; });
+  if (push) { dash.setLink(id); const t = document.getElementById('top'); if (t && window.matchMedia('(max-width: 640px)').matches) t.scrollIntoView({ block: 'start' }); }
+  W.pfDraw && W.pfDraw();
+};
+document.querySelectorAll('.pf-tab').forEach((t) => t.addEventListener('click', () => W.pfShowTab(t.dataset.tab, true)));
+const startTab = location.hash.slice(1);
+if (['home', 'trend', 'dividend', 'bench', 'portfolio', 'sim', 'report'].includes(startTab)) W.pfTab = startTab;
+</script>
+
+<script>
+// ---------- 그리기 ----------
+const W = window;
+const C = dash.colors;
+const P = { mine: '#22c55e', kospi: '#3b82f6', sp: '#ef4444', nq: '#94a3b8', fx: '#8b5cf6', gold: '#eab308', muted: '#cbd5e1', gray: '#9ca3af' };
+const won = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 });
+const enc = (v) => String(v).replace(/[%&=,]/g, (c) => encodeURIComponent(c));
+const setText = (id, txt, src) => { const el = document.getElementById(id); if (!el) return el; el.textContent = txt; el.classList.remove('dash-skeleton'); return el; };
+const markSummary = (combo) => document.querySelectorAll('[data-source="summary"][data-field], [data-source="hold_summary"][data-field], [data-source="total_assets"][data-field]').forEach((el) => el.setAttribute('data-where', 'combo=' + enc(combo)));
+
+W.pfDraw = () => {
+  const p = dash.params(); const combo = W.pfCombo(); const gran = p.gran || '월'; const fx = p.fx || 'krw';
+  document.querySelectorAll('.pf-tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === W.pfTab)));
+  document.querySelectorAll('.pf-page').forEach((s) => { s.hidden = s.id !== W.pfTab; });
+  W.pfSetBtns(); markSummary(combo);
+
+  // 요약
+  const tad = dash.data('total_assets');
+  const sm = dash.data('summary');
+  const s = sm.status === 'ok' ? sm.data.find((r) => r.combo === combo) : null;
+  const take = document.getElementById('pf-take');
+  if (s) {
+    take.replaceChildren();
+    const add = (t, b, field) => { if (b) { const e = document.createElement('b'); e.textContent = t; if (field) { e.dataset.source = 'summary'; e.dataset.field = field; e.dataset.where = 'combo=' + enc(combo); } take.append(e); } else take.append(document.createTextNode(t)); };
+    const tA = tad.status === 'ok' ? tad.data.find((r) => r.combo === combo) : null;
+    if (tA) {
+      const addT = (t, field) => { const e = document.createElement('b'); e.textContent = t; e.dataset.source = 'total_assets'; e.dataset.field = field; e.dataset.where = 'combo=' + enc(combo); take.append(e); };
+      add(`${combo.split('+').join('·')} 계좌 총 자산은 `); addT(W.pfWon(tA.total_value), 'total_value'); add('으로 납입 원금 대비 '); addT(W.pfPct(tA.total_ret), 'total_ret');
+      add(` 늘었습니다(평가 입력 ${tA.n_eval}개 계좌 + 나머지는 장부 기준). 올해 배당은 `); add(W.pfWon(s.ytd_dividend), true, 'ytd_dividend'); add('입니다.');
+    } else {
+      add(`${combo.split('+').join('·')} 계좌 장부 자산은 `); add(W.pfWon(s.book_krw), true, 'book_krw'); add('으로, 올해 배당은 '); add(W.pfWon(s.ytd_dividend), true, 'ytd_dividend'); add('입니다.');
+    }
+    setText('t-principal', W.pfWon(s.principal));
+    setText('t-start', `2024.01 투자 시작(2023년 말 잔액 포함) · 투자·연금 ${W.pfShort(s.principal_inv)}`);
+    setText('t-div', W.pfWon(s.dividend)); setText('t-div-sub', `원금 대비 ${W.pfPct(s.dividend / s.principal, false)}`);
+    setText('t-int', W.pfWon(s.interest)); setText('t-ytd', W.pfWon(s.ytd_contrib)); setText('t-ytd-sub', `${s.last_month.slice(0, 4)}년 1월~${Number(s.last_month.slice(5))}월`);
+    setText('d-month', W.pfWon(s.month_dividend)); setText('d-month-sub', `${s.last_month.replace('-', '.')} 입금분`);
+    setText('d-ytd', W.pfWon(s.ytd_dividend)); setText('d-avg', W.pfWon(s.ttm_avg_dividend)); setText('d-total', W.pfWon(s.dividend));
+  } else if (sm.status === 'error') {
+    take.textContent = '데이터를 불러오지 못했습니다.';
+  }
+
+  const hsd = dash.data('hold_summary'); const hs = hsd.status === 'ok' ? hsd.data.find((r) => r.combo === combo) : null;
+  if (hs) {
+    const tg = setText('t-gain', W.pfWon(hs.hold_gain)); W.pfSign(tg, hs.hold_gain);
+    setText('t-gain-sub', hs.hold_cost ? `${W.pfPct(hs.hold_ret)} · 입력 종목 기준(투자 원금의 ${W.pfPct(hs.coverage, false)})` : '선택 계좌에 입력된 보유종목 없음');
+    setText('p-value', W.pfWon(hs.hold_value)); setText('p-cost', W.pfWon(hs.hold_cost));
+    const pg = setText('p-gain', W.pfWon(hs.hold_gain)); W.pfSign(pg, hs.hold_gain); setText('p-ret', W.pfPct(hs.hold_ret));
+    setText('p-cov', W.pfPct(hs.coverage, false));
+  } else if (hsd.status === 'error') ['t-gain', 'p-value', 'p-cost', 'p-gain', 'p-cov'].forEach((id) => setText(id, '—'));
+  const ta = tad.status === 'ok' ? tad.data.find((r) => r.combo === combo) : null;
+  const gd = dash.data('goals'); const gl = gd.status === 'ok' ? gd.data.find((r) => r.combo === combo) : null;
+  if (gl) {
+    const pct = (v) => (v == null ? '—' : (v * 100).toFixed(1) + '%');
+    const bar = (id, v) => { document.getElementById(id).style.width = Math.max(0, Math.min(100, (v || 0) * 100)) + '%'; };
+    setText('g1p', pct(gl.annual_pct)); bar('g1b', gl.annual_pct); setText('g1c', `목표 ${won.format(gl.annual_goal)}원 · 올해 ${won.format(gl.ytd_contrib)}원`);
+    setText('g2p', pct(gl.final_pct)); bar('g2b', gl.final_pct); setText('g2c', `목표 ${won.format(gl.final_goal)}원`);
+    setText('g3p', pct(gl.retire_pct)); bar('g3b', gl.retire_pct); setText('g3c', `2040년 1월 (${gl.months_done}개월 / ${gl.months_total}개월)`);
+  }
+  if (ta) {
+    setText('h-prin', W.pfWon(ta.total_principal));
+    const hg = setText('h-gain', (ta.total_gain > 0 ? '+' : '') + W.pfWon(ta.total_gain)); hg.style.color = ta.total_gain >= 0 ? 'var(--pf-mine)' : 'var(--pf-sp)';
+    const hr = setText('h-ret', W.pfPct(ta.total_ret)); hr.classList.toggle('neg', ta.total_ret < 0);
+    const days = Math.floor((Date.now() - Date.UTC(2024, 0, 1)) / 864e5) + 1;
+    const hd = document.getElementById('h-days'); hd.replaceChildren(document.createTextNode('벌써 '), Object.assign(document.createElement('b'), { textContent: won.format(days) }), document.createTextNode('일째 투자중이에요!'));
+  }
+  if (ta) {
+    setText('t-book', won.format(ta.total_value));
+    const sub = setText('t-book-sub', `원금 대비 ${W.pfPct(ta.total_ret)} (${W.pfWon(ta.total_gain)}) · 평가 입력 ${ta.n_eval}/${ta.n_all}개 계좌${ta.as_of ? ' · ' + ta.as_of.slice(5).replace('-', '/') + ' 기준' : ''}`);
+    W.pfSign(sub, 0);
+  } else if (tad.status === 'error') setText('t-book', '—');
+  const per = dash.data('periodic');
+  const rows = (g) => (per.status === 'ok' ? per.data.filter((r) => r.combo === combo && r.gran === g) : []);
+
+  // 홈: 원금 대비 자산 증가 (월)
+  if (W.pfTab === 'home') {
+    const box = document.getElementById('ch-home-growth');
+    if (per.status === 'ok') {
+      box.classList.remove('dash-skeleton');
+      const r = rows('월').filter((x) => x.end_month >= W.pfRangeStart(rows('월').slice(-1)[0].end_month));
+      const ser = [{ name: '장부 자산', color: P.mine, width: 3, area: true, values: r.map((x) => ({ x: W.pfMonthDate(x.end_month), y: x.book })) },
+        { name: '납입 원금', color: P.nq, dash: true, values: r.map((x) => ({ x: W.pfMonthDate(x.end_month), y: x.cum_contrib })) }];
+      W.pfLegend(document.getElementById('lg-home-growth'), ser); W.pfLine(box, ser);
+    } else if (per.status === 'error') W.pfFail(box);
+
+    const bn = dash.data('bench'); const cmp = document.getElementById('cmp-home');
+    if (bn.status === 'ok') {
+      const b = bn.data.filter((r) => r.combo === combo); const last = b[b.length - 1];
+      cmp.replaceChildren(); cmp.classList.remove('dash-skeleton');
+      if (last) {
+        const k = fx === 'krw' ? '_fx' : '';
+        const items = [['납입 원금', last.principal, 'principal'], ['내 투자', last.book, 'book'], ['KOSPI', last.kospi, 'kospi'], ['S&P500', last['sp500' + k], 'sp500' + k], ['NASDAQ', last['nasdaq' + k], 'nasdaq' + k]];
+        const colr = { '내 투자': P.mine, KOSPI: P.kospi, 'S&P500': P.sp, NASDAQ: P.nq };
+        const bars = items.slice(1).map(([lb, v]) => ({ lb, r: v / last.principal - 1 }));
+        const svgBox = document.createElement('div'); svgBox.style.gridColumn = '1/-1'; svgBox.style.position = 'relative'; cmp.append(svgBox);
+        { const wdt = Math.max(280, cmp.clientWidth), hgt = 190; const sv = d3.select(svgBox).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${wdt} ${hgt}`);
+          const xb = d3.scaleBand(bars.map((b2) => b2.lb), [8, wdt - 8]).padding(0.35); const yb = d3.scaleLinear([Math.min(0, d3.min(bars, (b2) => b2.r)), Math.max(0.01, d3.max(bars, (b2) => b2.r))], [hgt - 26, 22]);
+          sv.append('line').attr('x1', 8).attr('x2', wdt - 8).attr('y1', yb(0)).attr('y2', yb(0)).attr('stroke', 'var(--cds-chart-axis)');
+          const bg = sv.selectAll('g').data(bars).join('g');
+          bg.append('rect').attr('x', (b2) => xb(b2.lb)).attr('width', Math.min(64, xb.bandwidth())).attr('y', (b2) => yb(Math.max(0, b2.r))).attr('height', (b2) => Math.abs(yb(b2.r) - yb(0))).attr('rx', 6).attr('fill', (b2) => colr[b2.lb]);
+          bg.append('text').attr('x', (b2) => xb(b2.lb) + Math.min(64, xb.bandwidth()) / 2).attr('y', (b2) => yb(Math.max(0, b2.r)) - 6).attr('text-anchor', 'middle').attr('font-size', 12).attr('font-weight', 700).attr('fill', (b2) => colr[b2.lb]).text((b2) => W.pfPct(b2.r));
+          bg.append('text').attr('x', (b2) => xb(b2.lb) + Math.min(64, xb.bandwidth()) / 2).attr('y', hgt - 8).attr('text-anchor', 'middle').attr('font-size', 12).attr('fill', 'var(--color-fg-muted)').text((b2) => b2.lb); }
+        for (const [lb, v, f] of items) {
+          const d = document.createElement('div'); const l = document.createElement('div'); l.className = 'lb'; l.textContent = lb;
+          const vv = document.createElement('div'); vv.className = 'v'; vv.textContent = W.pfShort(v) + '원';
+          vv.dataset.source = 'bench'; vv.dataset.field = f; if (colr[lb]) vv.style.color = colr[lb]; vv.dataset.where = `combo=${enc(combo)}&month=${last.month}`;
+          const sub = document.createElement('div'); sub.className = 'sub'; sub.textContent = lb === '납입 원금' ? '기준' : W.pfPct(v / last.principal - 1); if (lb !== '납입 원금') W.pfSign(sub, v / last.principal - 1);
+          d.append(l, vv, sub); cmp.append(d);
+        }
+        document.getElementById('nt-home-bench').textContent = `투자·연금 계좌에 넣은 금액을 그 달 지수에 똑같이 넣었다고 가정한 ${last.month.replace('-', '.')} 가치. ${fx === 'krw' ? '미국 지수는 환율 변동 포함(원화 환산).' : '미국 지수는 달러 기준(환율 미반영).'}`;
+      }
+    } else if (bn.status === 'error') W.pfFail(cmp);
+  }
+
+  // 자산 추이
+  if (W.pfTab === 'trend') {
+    const box = document.getElementById('ch-flow'); const box2 = document.getElementById('ch-cum');
+    document.getElementById('h-flow').textContent = `${gran}별 납입·배당·이자`;
+    if (per.status === 'ok') {
+      const all = rows(gran); const start = W.pfRangeStart(all.slice(-1)[0].end_month); const r = all.filter((x) => x.end_month >= start);
+      box.classList.remove('dash-skeleton'); box2.classList.remove('dash-skeleton');
+      const cats = r.map((x) => ({ label: x.period, tick: gran === '월' ? x.period.replace('-', '.') : x.period }));
+      const ser = [{ name: '납입', color: P.kospi, values: r.map((x) => x.contrib) }, { name: '배당', color: P.mine, values: r.map((x) => x.dividend) }, { name: '이자', color: P.gold, values: r.map((x) => x.interest) }];
+      W.pfLegend(document.getElementById('lg-flow'), ser); W.pfBars(box, cats, ser);
+      const ser2 = [{ name: '장부 자산', color: P.mine, width: 3, area: true, values: r.map((x) => ({ x: W.pfMonthDate(x.end_month), y: x.book })) },
+        { name: '원금+배당', color: P.kospi, dash: true, values: r.map((x) => ({ x: W.pfMonthDate(x.end_month), y: x.cum_contrib + x.cum_dividend })) },
+        { name: '납입 원금', color: P.nq, dash: true, values: r.map((x) => ({ x: W.pfMonthDate(x.end_month), y: x.cum_contrib })) }];
+      W.pfLegend(document.getElementById('lg-cum'), ser2);
+      W.pfLine(box2, ser2, { tipTitle: (_, i) => r[i] ? r[i].period : '' });
+    } else if (per.status === 'error') { W.pfFail(box); W.pfFail(box2); }
+
+    const ae = dash.data('acct_eval'); const aeBox = document.getElementById('ch-acct-eval'); const aeTb = document.querySelector('#tb-acct-eval tbody');
+    if (ae.status === 'ok') {
+      aeBox.classList.remove('dash-skeleton');
+      const owners = combo.split('+'); const rows = ae.data.filter((x) => owners.includes(x.owner));
+      W.pfLegend(document.getElementById('lg-acct-eval'), [{ name: '투자원금', color: P.muted }, { name: '현재 평가', color: P.mine }]);
+      W.pfPair(aeBox, rows.map((x) => ({ label: x.account, a: x.principal, b: x.value })), { colorA: P.muted, colorB: P.mine, nameA: '투자원금', nameB: '현재 평가' });
+      aeTb.replaceChildren(...rows.map((x) => {
+        const tr = document.createElement('tr'); tr.dataset.key = x.account;
+        const basis = x.cash_est && x.cash_est > 0.1 * x.value ? `${x.basis} · 차액 ${W.pfShort(x.cash_est)}원은 현금 또는 미입력 종목` : x.basis;
+        for (const [v, l, sg] of [[x.account, 1], [W.pfWon(x.principal)], [W.pfWon(x.value)], [W.pfWon(x.gain), 0, x.gain], [W.pfPct(x.ret), 0, x.ret], [basis, 1]]) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; if (sg != null) W.pfSign(td, sg); tr.append(td); }
+        return tr;
+      }));
+    } else if (ae.status === 'error') W.pfFail(aeBox);
+    const bl = dash.data('bal_latest'); const tbb = document.querySelector('#tb-bal tbody');
+    if (bl.status === 'ok') {
+      const owners = combo.split('+'); const rows = bl.data.filter((x) => owners.includes(x.owner));
+      tbb.replaceChildren(...rows.map((x) => {
+        const tr = document.createElement('tr'); tr.dataset.key = x.account;
+        for (const [v, l, sg] of [[x.account, 1], [x.date.replace(/-/g, '.'), 1], [W.pfWon(x.balance_krw)], [W.pfWon(x.principal)], [W.pfWon(x.gain), 0, x.gain], [W.pfPct(x.ret), 0, x.ret]]) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; if (sg != null) W.pfSign(td, sg); tr.append(td); }
+        return tr;
+      }));
+      if (!rows.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 6; td.className = 'l'; td.textContent = '선택한 계좌에 입력된 월말 잔고가 없습니다.'; tr.append(td); tbb.replaceChildren(tr); }
+    }
+    const av = dash.data('accounts_view'); const tb = document.querySelector('#tb-accounts tbody');
+    document.getElementById('th-bal').textContent = fx === 'krw' ? '잔액(원화)' : '잔액(현지 통화)';
+    if (av.status === 'ok') {
+      const owners = combo.split('+');
+      tb.replaceChildren(...av.data.filter((a) => owners.includes(a.owner)).map((a) => {
+        const tr = document.createElement('tr'); tr.dataset.key = a.account;
+        const bal = fx === 'krw' ? W.pfWon(a.balance_krw_now) : (a.ccy === 'VND' ? won.format(a.balance_native) + ' ₫' : W.pfWon(a.balance_native));
+        for (const [v, l] of [[a.account, 1], [a.owner, 1], [a.group, 1], [a.start.replace(/-/g, '.'), 1], [W.pfWon(a.principal_krw)], [W.pfWon(a.dividend_krw)], [W.pfWon(a.interest_krw)], [bal]]) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; tr.append(td); }
+        return tr;
+      }));
+    }
+  }
+
+  // 배당
+  if (W.pfTab === 'dividend') {
+    const box = document.getElementById('ch-divbar'), box2 = document.getElementById('ch-divcum');
+    document.getElementById('h-divbar').textContent = `${gran}별 배당·분배금`;
+    if (per.status === 'ok') {
+      box.classList.remove('dash-skeleton'); box2.classList.remove('dash-skeleton');
+      const all = rows(gran); const start = W.pfRangeStart(all.slice(-1)[0].end_month); const r = all.filter((x) => x.end_month >= start && x.cum_dividend > 0);
+      const cats = r.map((x) => ({ label: x.period, tick: gran === '월' ? x.period.replace('-', '.') : x.period }));
+      const ser = [{ name: '배당·분배금', color: P.gray, values: r.map((x) => x.dividend) }];
+      const line = gran === '월' ? { name: '12개월 월평균', color: P.kospi, values: r.map((x) => x.div_avg12) } : null;
+      W.pfLegend(document.getElementById('lg-divbar'), [{ name: '배당·분배금', color: P.gray }, { name: '최근 기간', color: P.mine }, ...(line ? [line] : [])]); W.pfBars(box, cats, ser, { line, hiLast: P.mine });
+      const m = rows('월').filter((x) => x.end_month >= start && x.cum_dividend > 0);
+      W.pfLine(box2, [{ name: '누적 배당', color: P.kospi, width: 3, area: true, values: m.map((x) => ({ x: W.pfMonthDate(x.end_month), y: x.cum_dividend })) }], { height: 200 });
+      const tb = document.querySelector('#tb-divyear tbody');
+      tb.replaceChildren(...rows('연').filter((x) => x.dividend > 0).reverse().map((x) => {
+        const tr = document.createElement('tr'); tr.dataset.key = [x.combo, x.gran, x.period].map(enc).join(',');
+        for (const [v, l] of [[x.period, 1], [W.pfWon(x.dividend)], [W.pfWon(x.cum_contrib)], [W.pfPct(x.div_yield, false)]]) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; tr.append(td); }
+        return tr;
+      }));
+    } else if (per.status === 'error') { W.pfFail(box); W.pfFail(box2); }
+    const di = dash.data('div_items'); const tb = document.querySelector('#tb-items tbody');
+    if (di.status === 'ok') {
+      tb.replaceChildren(...di.data.filter((x) => x.combo === combo).map((x) => {
+        const tr = document.createElement('tr'); tr.dataset.key = [x.combo, x.item].map(enc).join(',');
+        for (const [v, l] of [[x.item, 1], [W.pfWon(x.ytd)], [W.pfWon(x.total)], [won.format(x.count) + '회'], [x.last_date.replace(/-/g, '.')]]) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; tr.append(td); }
+        return tr;
+      }));
+    }
+  }
+
+  // 지수 비교
+  if (W.pfTab === 'bench') {
+    const box = document.getElementById('ch-bench'); const bn = dash.data('bench'); const k = fx === 'krw' ? '_fx' : '';
+    if (bn.status === 'ok') {
+      box.classList.remove('dash-skeleton');
+      const all = bn.data.filter((r) => r.combo === combo); const start = all.length ? W.pfRangeStart(all[all.length - 1].month) : '0';
+      const r = all.filter((x) => x.month >= start); const X = (x) => W.pfMonthDate(x.month);
+      const ser = [{ name: '내 투자 (원금+배당)', color: P.mine, width: 3.5, area: true, values: r.map((x) => ({ x: X(x), y: x.book })) },
+        { name: 'KOSPI', color: P.kospi, dash: true, values: r.map((x) => ({ x: X(x), y: x.kospi })) },
+        { name: 'S&P500', color: P.sp, dash: true, values: r.map((x) => ({ x: X(x), y: x['sp500' + k] })) },
+        { name: 'NASDAQ', color: P.nq, dash: true, values: r.map((x) => ({ x: X(x), y: x['nasdaq' + k] })) },
+        { name: '납입 원금', color: P.muted, dash: true, values: r.map((x) => ({ x: X(x), y: x.principal })) }];
+      W.pfLegend(document.getElementById('lg-bench'), ser); W.pfLine(box, ser);
+      document.getElementById('nt-bench').textContent = `2023년 말 투자·연금 잔액을 2024년 1월에, 이후 월별 순납입액(인출 포함)을 그 달 말 지수로 사고팔았다고 가정한 가치. 내 계좌선은 시세 변동 없이 원금+배당만 반영합니다. ${fx === 'krw' ? '미국 지수는 원/달러 변동 포함.' : '미국 지수는 달러 기준.'}`;
+    } else if (bn.status === 'error') W.pfFail(box);
+
+    const ib = document.getElementById('ch-idxline'); const ix = dash.data('idx');
+    if (ix.status === 'ok') {
+      ib.classList.remove('dash-skeleton');
+      const last = ix.data[ix.data.length - 1]; const p = dash.params().range || '전체';
+      const st = p === '전체' ? '2023-12' : (() => { const n = { '1년': 12, '3년': 36, '5년': 60 }[p]; return new Date(Date.UTC(Number(last.month.slice(0, 4)), Number(last.month.slice(5)) - 1 - n, 1)).toISOString().slice(0, 7); })();
+      const r = ix.data.filter((x) => x.month >= st); const b0 = r[0];
+      const f = { kospi: (x) => x.kospi, sp: (x) => x.sp500 * (k ? x.usdkrw : 1), nq: (x) => x.nasdaq * (k ? x.usdkrw : 1), fx: (x) => x.usdkrw };
+      const mk = (name, color, fn) => ({ name, color, values: r.map((x) => ({ x: W.pfMonthDate(x.month), y: fn(x) / fn(b0) - 1 })) });
+      const ser = [mk('KOSPI', P.kospi, f.kospi), mk('NASDAQ', P.nq, f.nq), mk('S&P500', P.sp, f.sp), mk('달러', P.fx, f.fx)].map((x) => ({ ...x, dash: true }));
+      const bnd = dash.data('bench');
+      if (bnd.status === 'ok') {
+        const mb = new Map(bnd.data.filter((x) => x.combo === combo).map((x) => [x.month, x.principal > 0 ? x.book / x.principal : null]));
+        const m0 = mb.get(st) ?? [...mb.values()][0];
+        ser.unshift({ name: '내 투자', color: P.mine, width: 3.5, values: r.map((x) => ({ x: W.pfMonthDate(x.month), y: mb.has(x.month) && m0 ? mb.get(x.month) / m0 - 1 : null })) });
+      }
+      const rc = document.getElementById('rc-idx');
+      if (rc) {
+        rc.replaceChildren(...ser.map((x) => { const lv = [...x.values].reverse().find((q) => q.y != null); const d = document.createElement('div');
+          const l = document.createElement('div'); l.className = 'lb'; l.textContent = x.name; const v = document.createElement('div'); v.className = 'v'; v.style.color = x.color;
+          v.textContent = lv ? W.pfPct(lv.y) : '—'; d.append(l, v); return d; }));
+      }
+      document.getElementById('h-idxline').textContent = `주요지수 수익률 비교 (${p === '전체' ? '투자 시작 이후' : '최근 ' + p})`;
+      document.getElementById('nt-idxline').textContent = `${st.replace('-', '.')} 월말을 0%로 맞춘 누적 수익률. ${k ? '미국 지수는 원화 환산.' : '미국 지수는 달러 기준.'}`;
+      W.pfLegend(document.getElementById('lg-idxline'), ser); W.pfLine(ib, ser, { fmt: (v) => W.pfPct(v), tipFmt: (v) => W.pfPct(v), zero: false });
+    } else if (ix.status === 'error') W.pfFail(ib);
+
+    const ir = dash.data('index_returns'); const tb = document.querySelector('#tb-idxret tbody');
+    if (ir.status === 'ok') {
+      const basis = k ? '환율 반영' : '기본';
+      document.getElementById('nt-idxret').textContent = `월말 종가 기준(이번 달은 최근 종가). ${k ? '미국 지수는 원화로 환산한 수익률.' : '미국 지수는 달러 기준 수익률.'}`;
+      tb.replaceChildren(...ir.data.filter((x) => x.basis === basis).map((x) => {
+        const tr = document.createElement('tr'); tr.dataset.key = [x.index, x.basis].map(enc).join(',');
+        const td0 = document.createElement('td'); td0.className = 'l'; td0.textContent = x.index; tr.append(td0);
+        for (const f of ['ytd', 'y1', 'y3', 'y5', 'since']) { const td = document.createElement('td'); td.textContent = W.pfPct(x[f]); W.pfSign(td, x[f]); tr.append(td); }
+        return tr;
+      }));
+    }
+  }
+
+  // 포트폴리오
+  if (W.pfTab === 'portfolio') {
+    const hv = dash.data('holdings_val'); const tree = document.getElementById('ch-tree'); const tb = document.querySelector('#tb-holdings tbody');
+    document.getElementById('th-avg').textContent = fx === 'krw' ? '평균단가(원)' : '평균단가';
+    document.getElementById('th-price').textContent = fx === 'krw' ? '현재가(원)' : '현재가';
+    document.getElementById('th-value').textContent = fx === 'krw' ? '평가금액(원)' : '평가금액';
+    if (hv.status === 'ok') {
+      tree.classList.remove('dash-skeleton');
+      const owners = combo.split('+'); const h = hv.data.filter((x) => owners.includes(x.owner) && x.value_krw);
+      const total = d3.sum(h, (x) => x.value_krw);
+      const money = (v, x) => (fx === 'krw' || x.ccy === 'KRW' ? W.pfWon(v * (x.ccy === 'USD' && fx === 'krw' ? x.fx : 1)) : '$' + d3.format(',.2f')(v));
+      tb.replaceChildren(...h.sort((a, b) => b.value_krw - a.value_krw).map((x) => {
+        const tr = document.createElement('tr'); tr.dataset.key = [x.account, x.ticker].map(enc).join(',');
+        const cells = [[x.name, 1], [x.account, 1], [x.ticker, 1], [won.format(x.qty)], [money(x.avg_price, x)], [money(x.price, x)],
+          [fx === 'krw' || x.ccy === 'KRW' ? W.pfWon(x.value_krw) : '$' + d3.format(',.2f')(x.value_native)], [W.pfPct(x.ret), 0, x.ret], [W.pfPct(x.value_krw / total, false)]];
+        for (const [v, l, sg] of cells) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; if (sg != null) W.pfSign(td, sg); tr.append(td); }
+        return tr;
+      }));
+      // 트리맵
+      tree.querySelectorAll('svg').forEach((n) => n.remove());
+      const width = Math.max(280, tree.clientWidth), height = tree.clientWidth < 500 ? 240 : 280;
+      if (h.length) {
+        const root = d3.hierarchy({ children: h }).sum((d) => d.value_krw || 0);
+        d3.treemap().size([width, height]).paddingInner(3).round(true)(root);
+        const svg = d3.select(tree).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${width} ${height}`).style('display', 'block');
+        const tip = W.pfTip(tree);
+        const node = svg.selectAll('g').data(root.leaves()).join('g').attr('transform', (d) => `translate(${d.x0},${d.y0})`);
+        node.append('rect').attr('width', (d) => d.x1 - d.x0).attr('height', (d) => d.y1 - d.y0).attr('rx', 4).attr('fill', (_, i) => C[i % C.length]);
+        node.append('text').attr('x', 8).attr('y', 20).attr('fill', 'var(--color-bg)').attr('font-size', 12).attr('font-weight', 600)
+          .text((d) => ((d.x1 - d.x0) > 70 && (d.y1 - d.y0) > 26 ? d.data.name : ''));
+        node.append('text').attr('x', 8).attr('y', 36).attr('fill', 'var(--color-bg)').attr('font-size', 11)
+          .text((d) => ((d.x1 - d.x0) > 50 && (d.y1 - d.y0) > 42 ? W.pfPct(d.value / total, false) : ''));
+        node.on('pointermove', (ev, d) => { const [mx, my] = d3.pointer(ev, svg.node()); W.pfTipShow(tree, tip, mx * tree.clientWidth / width, my * tree.clientWidth / width, d.data.name, [{ name: '평가금액', value: W.pfWon(d.data.value_krw) }, { name: '비중', value: W.pfPct(d.data.value_krw / total, false) }, { name: '수익률', value: W.pfPct(d.data.ret) }]); })
+          .on('pointerleave', (ev) => { if (ev.pointerType !== 'touch') tip.style.display = 'none'; });
+        const treeMove = node.on('pointermove'); node.on('pointerdown', function (ev, d) { treeMove.call(this, ev, d); });
+      } else {
+        const n = document.createElement('p'); n.className = 'pf-note'; n.textContent = '선택한 계좌에 입력된 보유종목이 없습니다'; tree.replaceChildren(n);
+      }
+    } else if (hv.status === 'error') { W.pfFail(tree); }
+  }
+  W.pfDrawSim && W.pfDrawSim();
+  W.pfDrawReport && W.pfDrawReport();
+  W.pfDrawRisk && W.pfDrawRisk();
+};
+
+dash.onData(() => W.pfDraw());
+</script>
+
+<script>
+// ---------- 시뮬레이션 화면 ----------
+const W = window;
+const wonS = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 });
+const encS = (v) => String(v).replace(/[%&=,|]/g, (c) => encodeURIComponent(c));
+const SIMC = { p50: '#22c55e', band: '#3b82f6', prin: '#cbd5e1', goal: '#eab308' };
+document.querySelectorAll('[data-sim-basis]').forEach((b) => b.addEventListener('click', () => dash.setParams({ sim_basis: b.dataset.simBasis })));
+document.querySelectorAll('[data-sim-level]').forEach((b) => b.addEventListener('click', () => dash.setParams({ sim_level: b.dataset.simLevel })));
+const ym = (m) => (m ? `${m.slice(0, 4)}년 ${Number(m.slice(5))}월` : '2040년 1월 이후');
+
+W.pfDrawSim = () => {
+  if (W.pfTab !== 'sim') return;
+  const p = dash.params(); const combo = W.pfCombo(); const basis = p.sim_basis || 'mix'; const level = p.sim_level || 'avg';
+  document.querySelectorAll('[data-sim-basis]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.simBasis === basis)));
+  document.querySelectorAll('[data-sim-level]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.simLevel === level)));
+  const where = `combo=${encS(combo)}&basis=${encS(basis)}&level=${encS(level)}`;
+  document.querySelectorAll('#sim [data-source="sim_sum"][data-field]').forEach((el) => el.setAttribute('data-where', where));
+  const put = (id, t) => { const el = document.getElementById(id); if (el) { el.textContent = t; el.classList.remove('dash-skeleton'); } return el; };
+
+  const ss = dash.data('sim_sum');
+  if (ss.status === 'ok') {
+    const s = ss.data.find((r) => r.combo === combo && r.basis === basis && r.level === level);
+    const avgRow = ss.data.find((r) => r.combo === combo && r.basis === basis && r.level === 'avg');
+    if (avgRow) document.getElementById('btn-sim-avg').textContent = `최근 평균 ${W.pfShort(avgRow.avg_contrib)}`;
+    if (s) {
+      put('lb-sim-end', `${ym(s.end_month)} 예상 자산 (중앙값)`);
+      put('s-end', W.pfWon(s.end_p50));
+      put('s-end-sub', `하위 10% ${W.pfShort(s.end_p10)} ~ 상위 10% ${W.pfShort(s.end_p90)} · 원금 ${W.pfShort(s.principal_end)}`);
+      put('s-prob', `${Math.round(s.goal_prob * 100)}%`);
+      put('s-prob-sub', `500개 경로 중 ${ym(s.end_month)}에 10억 원 이상인 비율 · 현재 ${W.pfShort(s.value_now)}`);
+      put('s-when', s.goal_month_p50 ? ym(s.goal_month_p50) : '기간 내 미도달');
+      put('s-when-sub', `중앙값 기준(연초 단위) · 보수적(하위 10%) ${s.goal_month_p10 ? ym(s.goal_month_p10) : '기간 내 미도달'}`);
+      put('s-div', W.pfWon(s.div_month));
+      put('s-div-sub', `중앙값 자산 × 최근 12개월 배당수익률 연 ${(s.div_yield_y * 100).toFixed(1)}%`);
+      put('s-need', s.need50 > 0 ? W.pfWon(s.need50) : '추가 납입 없이 도달');
+      put('s-need-sub', s.need80 > 0 ? `확률 50% 기준 · 80%로 높이려면 ${W.pfShort(s.need80)}` : '확률 80% 기준으로도 추가 납입 불필요');
+      document.getElementById('nt-sim').textContent = `${s.sample} 월간 수익률(미국 지수는 원/달러 변동 포함)을 무작위로 다시 뽑아 만든 500가지 미래 경로로 ${ym(s.end_month)}(은퇴 목표)까지의 자산 범위를 추정합니다. 매달 같은 비중으로 재조정하고 지수 배당은 재투자한다고 가정했습니다. 과거 흐름에 기댄 추정이며 미래 수익을 보장하지 않습니다.`;
+    }
+  }
+
+  const box = document.getElementById('ch-sim-path'); const sp = dash.data('sim_path');
+  if (sp.status === 'ok') {
+    box.classList.remove('dash-skeleton');
+    const r = sp.data.filter((x) => x.combo === combo && x.basis === basis && x.level === level);
+    const X = (x) => W.pfMonthDate(x.month);
+    const ser = [
+      { name: '상위 10%', color: SIMC.band, dash: true, values: r.map((x) => ({ x: X(x), y: x.p90 })) },
+      { name: '중앙값', color: SIMC.p50, width: 3.5, area: true, values: r.map((x) => ({ x: X(x), y: x.p50 })) },
+      { name: '하위 10%', color: SIMC.band, dash: true, values: r.map((x) => ({ x: X(x), y: x.p10 })) },
+      { name: '누적 원금', color: SIMC.prin, dash: true, values: r.map((x) => ({ x: X(x), y: x.principal })) },
+      { name: '목표 10억', color: SIMC.goal, dash: true, width: 1.5, values: r.map((x) => ({ x: X(x), y: 1000000000 })) },
+    ];
+    W.pfLegend(document.getElementById('lg-sim-path'), ser);
+    W.pfLine(box, ser, { xfmt: d3.utcFormat('%Y'), tipTitle: (xv) => d3.utcFormat('%Y년 %m월')(xv) });
+  } else if (sp.status === 'error') W.pfFail(box);
+
+  const st = dash.data('sim_stress'); const tb = document.querySelector('#tb-sim-stress tbody');
+  if (st.status === 'ok') {
+    tb.replaceChildren(...st.data.filter((x) => x.combo === combo && x.basis === basis).map((x) => {
+      const tr = document.createElement('tr'); tr.dataset.key = x.key;
+      const cells = [[x.scenario, 1], [x.period, 1], [W.pfPct(x.drop), 0, x.drop], [W.pfWon(x.loss), 0, x.loss], [x.recover_months ? `${x.recover_months}개월` : '미회복']];
+      for (const [v, l, sg] of cells) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; if (sg != null) W.pfSign(td, sg); tr.append(td); }
+      return tr;
+    }));
+  }
+
+  const mx = dash.data('sim_mix'); const tm = document.querySelector('#tb-sim-mix tbody');
+  if (mx.status === 'ok') {
+    tm.replaceChildren(...mx.data.filter((x) => x.combo === combo && x.value > 0).map((x) => {
+      const tr = document.createElement('tr'); tr.dataset.key = x.key;
+      const cells = [[x.cls, 1], [W.pfWon(x.value)], [W.pfPct(x.weight, false)], [W.pfPct(x.cagr)], [x.vol ? W.pfPct(x.vol, false) : '—']];
+      for (const [v, l] of cells) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; tr.append(td); }
+      return tr;
+    }));
+    const note = document.getElementById('nt-sim-mix');
+    if (basis !== 'mix') note.textContent = `지금은 '${{ sp500: 'S&P500', nasdaq: '나스닥', kospi: 'KOSPI' }[basis]}' 기준이라 저축을 뺀 모든 자산을 그 지수에 넣었다고 계산합니다. 아래 표는 '내 자산 구성' 기준의 실제 구성입니다.`;
+    else note.textContent = '보유종목 이름으로 자산군을 나눴고(나스닥·테크 → 나스닥, S&P·미국배당 → S&P500, 채권혼합은 절반씩, 그 외 국내), 종목이 없는 투자 계좌는 전체 보유 비중을 따랐습니다. 월말 잔고 중 종목 밖 금액은 현금으로 봤습니다.';
+  }
+};
+</script>
+
+<script>
+// ---------- 리포트 ----------
+const W = window;
+const encR = (v) => String(v).replace(/[%&=,]/g, (c) => encodeURIComponent(c));
+W.pfRepOpen = W.pfRepOpen || new Set();
+document.querySelectorAll('[data-rep]').forEach((b) => b.addEventListener('click', () => dash.setParams({ rep_type: b.dataset.rep })));
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+// 마크다운 일부(제목·목록·표·굵게·링크)를 안전하게 DOM으로 그림
+const inline = (parent, text) => {
+  const re = /\*\*([^*]+)\*\*|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|(https?:\/\/[^\s)<>]+)/g; let last = 0; let m;
+  while ((m = re.exec(text))) {
+    if (m.index > last) parent.append(document.createTextNode(text.slice(last, m.index)));
+    if (m[1]) parent.append(el('b', null, m[1]));
+    else { const a = el('a', null, m[2] || m[4]); a.href = m[3] || m[4]; a.target = '_blank'; a.rel = 'noopener noreferrer'; parent.append(a); }
+    last = re.lastIndex;
+  }
+  if (last < text.length) parent.append(document.createTextNode(text.slice(last)));
+};
+const renderMd = (box, md) => {
+  const lines = String(md || '').replace(/\r/g, '').split('\n'); let ul = null; let i = 0;
+  while (i < lines.length) {
+    const ln = lines[i].trimEnd(); const t = ln.trim();
+    if (t.startsWith('|')) {
+      ul = null; const rows = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) { rows.push(lines[i].trim()); i++; }
+      const cells = (r) => r.replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
+      const body = rows.filter((r) => !/^\|?\s*:?-{2,}/.test(r.replace(/\|/g, '|')) || !/^[\s|:-]+$/.test(r));
+      const wrap = el('div', 'tw'); const tb = el('table'); wrap.append(tb);
+      body.forEach((r, k) => { const tr = el('tr'); cells(r).forEach((c) => { const td = el(k === 0 ? 'th' : 'td'); inline(td, c); tr.append(td); }); tb.append(tr); });
+      box.append(wrap); continue;
+    }
+    if (/^#{1,2}\s/.test(t)) { ul = null; box.append(el('h3', null, t.replace(/^#+\s*/, ''))); }
+    else if (/^#{3,}\s/.test(t)) { ul = null; box.append(el('h4', null, t.replace(/^#+\s*/, ''))); }
+    else if (/^([-*•]|\d+\.)\s+/.test(t)) { if (!ul) { ul = el('ul'); box.append(ul); } const li = el('li'); inline(li, t.replace(/^([-*•]|\d+\.)\s+/, '')); ul.append(li); }
+    else if (t) { ul = null; const p = el('p'); inline(p, t); box.append(p); }
+    else ul = null;
+    i++;
+  }
+};
+W.pfDrawReport = () => {
+  if (W.pfTab !== 'report') return;
+  const type = dash.params().rep_type || '전체';
+  document.querySelectorAll('[data-rep]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.rep === type)));
+  const wl = document.getElementById('watch-list'); const wd = dash.data('watchlist');
+  if (wd.status === 'error') W.pfFail(wl);
+  else if (wd.status === 'ok') {
+    wl.classList.remove('dash-skeleton');
+    const on = wd.data.filter((x) => x.include === 'Y').length;
+    wl.replaceChildren(...wd.data.map((x) => {
+      const c = el('span', 'pf-chip' + (x.include === 'N' ? ' off' : '')); c.title = [x.code, x.market, x.memo].filter(Boolean).join(' · ');
+      const k = el('span', 'k' + (x.kind === '관심' ? ' w' : ''), x.kind); const n = el('span', null, x.name);
+      n.dataset.source = 'watchlist'; n.dataset.field = 'name'; n.dataset.where = 'code=' + encR(x.code); c.append(k, n); return c;
+    }), el('span', 'pf-note', `리포트 포함 ${on}개 / 전체 ${wd.data.length}개`));
+  }
+  const box = document.getElementById('rep-list'); const d = dash.data('reports');
+  if (d.status === 'error') { W.pfFail(box); return; }
+  if (d.status !== 'ok') return;
+  box.classList.remove('dash-skeleton');
+  const rows = d.data.filter((r) => type === '전체' || r.type === type).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  if (!rows.length) { box.replaceChildren(el('div', 'pf-rep-empty', d.data.length ? '이 구분의 리포트가 아직 없습니다.' : '아직 리포트가 없습니다. 예약된 작업이 실행되면(월요일 07:47 경제 전망, 평일 07:52 종목 이슈) 여기에 쌓입니다.')); return; }
+  box.replaceChildren(...rows.map((r) => {
+    const card = el('article', 'pf-rep'); const w = 'id=' + encR(r.id);
+    const head = el('button'); head.setAttribute('aria-expanded', String(W.pfRepOpen.has(r.id)));
+    const meta = el('div', 'meta'); const tag = el('span', 'tag' + (r.type === '종목이슈' ? ' iss' : ''), r.type === '종목이슈' ? '종목 이슈' : r.type === '경제전망' ? '경제 전망' : r.type);
+    const dt = el('span', null, r.date); dt.dataset.source = 'reports'; dt.dataset.field = 'date'; dt.dataset.where = w; meta.append(tag, dt);
+    if (r.tickers) meta.append(el('span', null, '· ' + r.tickers));
+    const ttl = el('div', 'ttl', r.title); ttl.dataset.source = 'reports'; ttl.dataset.field = 'title'; ttl.dataset.where = w;
+    const sum = el('div', 'sum', r.summary); sum.dataset.source = 'reports'; sum.dataset.field = 'summary'; sum.dataset.where = w;
+    head.append(meta, ttl, sum); card.append(head);
+    if (W.pfRepOpen.has(r.id)) { const b = el('div', 'body'); b.dataset.source = 'reports'; b.dataset.where = w; renderMd(b, r.body); card.append(b); }
+    head.addEventListener('click', () => { if (W.pfRepOpen.has(r.id)) W.pfRepOpen.delete(r.id); else W.pfRepOpen.add(r.id); W.pfDrawReport(); });
+    return card;
+  }));
+};
+</script>
+
+<script>
+// ---------- 자산 분류 화면 ----------
+const W = window;
+const RC = { '로우베타': '#3b82f6', '하이베타': '#22c55e', '알파': '#f97316' };
+const RD = { '로우베타': '원금 손실 없이 안정적', '하이베타': '지수연동 · 원금 손실 가능', '알파': '개별 직접투자' };
+const encK = (v) => String(v).replace(/[%&=,]/g, (c) => encodeURIComponent(c));
+document.querySelectorAll('[data-risk-other]').forEach((b) => b.addEventListener('click', () => dash.setParams({ risk_other: b.dataset.riskOther })));
+const mk = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+W.pfDrawRisk = () => {
+  const combo = W.pfCombo(); const other = dash.params().risk_other || 'Y';
+  if (W.pfTab === 'home') {
+    document.querySelectorAll('[data-risk-other]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.riskOther === other)));
+    const bar = document.getElementById('risk-bar'); const rows = document.getElementById('risk-rows'); const d = dash.data('risk_class');
+    if (d.status === 'error') { W.pfFail(bar); return; }
+    if (d.status !== 'ok') return;
+    bar.classList.remove('dash-skeleton');
+    const r = ['로우베타', '하이베타', '알파'].map((cls) => d.data.find((x) => x.combo === combo && x.other === other && x.cls === cls)).filter(Boolean);
+    bar.replaceChildren(...r.filter((x) => x.share > 0).map((x) => { const s = mk('span'); s.style.width = (x.share * 100).toFixed(2) + '%'; s.style.background = RC[x.cls]; s.title = `${x.cls} ${W.pfPct(x.share, false)}`; return s; }));
+    rows.replaceChildren(...r.map((x) => {
+      const w = `combo=${encK(combo)}&other=${other}&cls=${encK(x.cls)}`;
+      const box = mk('div', 'pf-riskrow'); const nm = mk('div', 'nm'); const dot = mk('span', 'dot'); dot.style.background = RC[x.cls]; nm.append(dot, mk('span', null, x.cls));
+      const sh = mk('span', 'sub', W.pfPct(x.share, false)); sh.style.marginLeft = 'auto'; sh.dataset.source = 'risk_class'; sh.dataset.field = 'share'; sh.dataset.where = w; nm.append(sh);
+      const v = mk('div', 'v', W.pfWon(x.value)); v.dataset.source = 'risk_class'; v.dataset.field = 'value'; v.dataset.where = w;
+      const s1 = mk('div', 'sub', RD[x.cls]);
+      const s2 = mk('div', 'sub'); const rt = mk('span', null, W.pfPct(x.ret)); rt.dataset.source = 'risk_class'; rt.dataset.field = 'ret'; rt.dataset.where = w; W.pfSign(rt, x.ret);
+      s2.append(document.createTextNode(`원금 ${W.pfShort(x.principal)} · 수익률 `), rt);
+      box.append(nm, v, s1, s2); return box;
+    }));
+    const tot = r[0] ? r[0].total : 0;
+    document.getElementById('nt-risk').textContent = `합계 ${W.pfWon(tot)}${other === 'Y' ? ' (집 등 기타자산 포함)' : ''}. 분류는 구글 시트 보유종목 S열·계좌목록 F열·기타자산 탭에서 바꿀 수 있습니다.`;
+  }
+  if (W.pfTab === 'portfolio') {
+    const t = dash.data('risk_items'); const tb = document.querySelector('#tb-risk-items tbody');
+    if (t.status === 'ok') {
+      const owners = combo.split('+'); const order = { '로우베타': 0, '하이베타': 1, '알파': 2 };
+      tb.replaceChildren(...t.data.filter((x) => owners.includes(x.owner)).sort((a, b) => order[a.cls] - order[b.cls] || b.value - a.value).map((x) => {
+        const tr = mk('tr'); tr.dataset.key = x.key;
+        const c0 = mk('td', 'l'); const dot = mk('span'); dot.style.cssText = `display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:${RC[x.cls]}`; c0.append(dot, document.createTextNode(x.cls)); tr.append(c0);
+        for (const [v, l] of [[x.item, 1], [x.account, 1], [W.pfWon(x.value)], [W.pfWon(x.principal)], [x.basis, 1]]) tr.append(mk('td', l ? 'l' : null, v));
+        return tr;
+      }));
+    }
+  }
+};
+</script>

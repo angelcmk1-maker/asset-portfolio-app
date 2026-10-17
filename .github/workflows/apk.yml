@@ -1,0 +1,60 @@
+name: 안드로이드 앱(APK) 빌드
+
+on:
+  push:
+    branches: [main]
+    paths: ['capacitor.config.json', 'package.json', 'package-lock.json', 'assets/**', 'android-keystore/**', '.github/workflows/apk.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: 패키지 설치
+        run: npm ci
+      - name: 화면 파일 만들기(설치본 기본 화면)
+        run: python3 tools/build.py
+      - name: 안드로이드 프로젝트 만들기
+        run: |
+          npx cap add android
+          npx @capacitor/assets generate --android --iconBackgroundColor '#1f1e1c' --iconBackgroundColorDark '#1f1e1c' --splashBackgroundColor '#1f1e1c' --splashBackgroundColorDark '#1f1e1c' || echo "아이콘 생성 건너뜀"
+          npx cap sync android
+      - name: 버전 번호 넣기
+        run: |
+          sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/; s/versionName \"[^\"]*\"/versionName \"1.0.${{ github.run_number }}\"/" android/app/build.gradle
+      - name: 서명 키(고정) 준비 — 업데이트 설치가 되도록 매번 같은 키 사용
+        run: |
+          mkdir -p ~/.android
+          cp android-keystore/debug.keystore ~/.android/debug.keystore
+      - name: APK 빌드
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../asset-portfolio-1.0.${{ github.run_number }}.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: asset-portfolio-apk
+          path: asset-portfolio-*.apk
+      - name: 릴리스에 올리기
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: 자산 포트폴리오 1.0.${{ github.run_number }}
+          body: |
+            휴대폰에서 아래 asset-portfolio-1.0.${{ github.run_number }}.apk 를 눌러 내려받아 설치하세요.
+            화면·기능 업데이트는 앱을 다시 설치하지 않아도 자동으로 반영됩니다. 새 APK는 앱 껍데기(아이콘·이름·권한)가 바뀔 때만 나옵니다.
+          files: asset-portfolio-*.apk
+          make_latest: true

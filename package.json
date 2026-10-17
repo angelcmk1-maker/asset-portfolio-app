@@ -1,0 +1,17 @@
+{
+  "name": "asset-portfolio-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "자산 포트폴리오 안드로이드 앱 (Capacitor 껍데기 + GitHub Pages 화면)",
+  "scripts": {
+    "build:web": "python3 tools/build.py"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/core": "^6.2.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^6.2.0"
+  }
+}
