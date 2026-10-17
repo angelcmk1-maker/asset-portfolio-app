@@ -11,6 +11,7 @@
 .pf-month{font:inherit;font-size:var(--cds-font-size-caption);padding:3px 8px;border-radius:8px;border:1px solid var(--color-border-line);background:var(--color-panel);color:var(--color-fg);min-width:8.5em;color-scheme:light dark}
 .pf-ib i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
 .pf-idxsel{padding:var(--cds-pad-md) var(--cds-pad-lg)}
+.pf-num{min-width:0;width:6.5em}
 .pf-tilde{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
 .pf-rg-msg{font-size:var(--cds-font-size-caption);color:var(--color-bad)}
 .pf-btn[aria-pressed=true]{background:var(--color-fg);color:var(--color-bg);border-color:var(--color-fg)}
@@ -424,12 +425,18 @@
   <section class="pf-page" id="sim" hidden>
     <div class="pf-card" id="card-sim-ctl">
       <h2>미래 자산 시뮬레이션</h2>
-      <p class="pf-note" id="nt-sim">과거 월간 수익률을 무작위로 다시 뽑아 만든 500가지 미래 경로로 2040년 1월(은퇴 목표)까지의 자산 범위를 추정합니다. 과거 흐름에 기댄 추정이며 미래 수익을 보장하지 않습니다.</p>
+      <p class="pf-note" id="nt-sim">과거 월간 수익률을 무작위로 다시 뽑아 만든 500가지 미래 경로로 목표 시점까지의 자산 범위를 추정합니다. 과거 흐름에 기댄 추정이며 미래 수익을 보장하지 않습니다.</p>
       <div class="pf-grp pf-simgrp" id="ctl-sim-basis"><span>수익률 기준</span>
         <button class="pf-btn" data-sim-basis="mix">내 자산 구성</button>
         <button class="pf-btn" data-sim-basis="sp500">S&amp;P500</button>
         <button class="pf-btn" data-sim-basis="nasdaq">나스닥</button>
         <button class="pf-btn" data-sim-basis="kospi">KOSPI</button>
+      </div>
+      <div class="pf-grp pf-simgrp" id="ctl-sim-goal"><span>목표</span>
+        <input class="pf-month pf-num" type="number" id="sim-goal" min="0.1" max="1000" step="0.5" inputmode="decimal" aria-label="목표 금액(억 원)"><span class="pf-tilde">억 원</span>
+        <select class="pf-month pf-num" id="sim-year" aria-label="목표 연도"></select><span class="pf-tilde">년 1월까지</span>
+        <button class="pf-btn" id="sim-goal-reset">기본값(10억·2040)</button>
+        <span class="pf-rg-msg" id="sim-goal-msg"></span>
       </div>
       <div class="pf-grp pf-simgrp" id="ctl-sim-level"><span>월 납입액</span>
         <button class="pf-btn" data-sim-level="avg" id="btn-sim-avg">최근 평균</button>
@@ -441,11 +448,11 @@
       </div>
     </div>
     <div class="pf-tiles">
-      <div class="pf-tile"><div class="lb" id="lb-sim-end">2040년 1월 예상 자산 (중앙값)</div><div class="v dash-skeleton" id="s-end" data-source="sim_sum" data-field="end_p50">—</div><div class="sub" id="s-end-sub"></div></div>
-      <div class="pf-tile"><div class="lb">10억 원 목표 달성 확률</div><div class="v dash-skeleton" id="s-prob" data-source="sim_sum" data-field="goal_prob">—</div><div class="sub" id="s-prob-sub"></div></div>
-      <div class="pf-tile"><div class="lb">목표 도달 예상 시점</div><div class="v dash-skeleton" id="s-when" data-source="sim_sum" data-field="goal_month_p50">—</div><div class="sub" id="s-when-sub"></div></div>
-      <div class="pf-tile"><div class="lb">은퇴 시점 예상 월 배당</div><div class="v dash-skeleton" id="s-div" data-source="sim_sum" data-field="div_month">—</div><div class="sub" id="s-div-sub"></div></div>
-      <div class="pf-tile"><div class="lb">목표에 필요한 월 납입액</div><div class="v dash-skeleton" id="s-need" data-source="sim_sum" data-field="need50">—</div><div class="sub" id="s-need-sub"></div></div>
+      <div class="pf-tile"><div class="lb" id="lb-sim-end">2040년 1월 예상 자산 (중앙값)</div><div class="v dash-skeleton" id="s-end" data-source="sim_base" data-field="end_p50">—</div><div class="sub" id="s-end-sub"></div></div>
+      <div class="pf-tile"><div class="lb" id="lb-sim-prob">10억 원 목표 달성 확률</div><div class="v dash-skeleton" id="s-prob" data-source="sim_base" data-field="goal_prob">—</div><div class="sub" id="s-prob-sub"></div></div>
+      <div class="pf-tile"><div class="lb">목표 도달 예상 시점</div><div class="v dash-skeleton" id="s-when" data-source="sim_base" data-field="goal_month_p50">—</div><div class="sub" id="s-when-sub"></div></div>
+      <div class="pf-tile"><div class="lb" id="lb-sim-div">목표 시점 예상 월 배당</div><div class="v dash-skeleton" id="s-div" data-source="sim_base" data-field="div_month">—</div><div class="sub" id="s-div-sub"></div></div>
+      <div class="pf-tile"><div class="lb">목표에 필요한 월 납입액</div><div class="v dash-skeleton" id="s-need" data-source="sim_base" data-field="need50">—</div><div class="sub" id="s-need-sub"></div></div>
     </div>
     <div class="pf-card" id="card-sim-path">
       <h2>예상 자산 범위</h2>
@@ -935,10 +942,10 @@ dash.calc('risk_class', {
 // ---------- 시뮬레이션 계산 ----------
 dash.calc('sim_base', {
   title: '시뮬레이션 기초값',
-  description: '2004년 이후 KOSPI·S&P500·NASDAQ(원화 환산) 월간 수익률을 같은 달끼리 묶어 무작위로 뽑는 몬테카를로 500개 경로(고정 시드). 소유자 조합별 현재 자산을 자산군(국내주식·미국S&P·나스닥·채권/현금 연 3%·저축 연 2.5%)으로 나누고 매달 그 비중으로 재조정한다고 가정. 지수는 가격지수라 배당을 따로 더해 재투자(국내 연 2.0%, S&P500 1.5%, 나스닥 0.8% 가정). 2040년 1월까지 현재 자산의 성장(A)과 매달 1원 납입분의 성장(B)을 연초마다 기록',
+  description: '2004년 이후 KOSPI·S&P500·NASDAQ(원화 환산) 월간 수익률을 같은 달끼리 묶어 무작위로 뽑는 몬테카를로 500개 경로(고정 시드). 소유자 조합별 현재 자산을 자산군(국내주식·미국S&P·나스닥·채권/현금 연 3%·저축 연 2.5%)으로 나누고 매달 그 비중으로 재조정한다고 가정. 지수는 가격지수라 배당을 따로 더해 재투자(국내 연 2.0%, S&P500 1.5%, 나스닥 0.8% 가정). 2060년 1월까지 현재 자산의 성장(A)과 매달 1원 납입분의 성장(B)을 연초마다 기록(목표 연도는 화면에서 선택)',
   inputs: ['kospi', 'sp500', 'nasdaq', 'usdkrw', 'holdings_val', 'acct_eval', 'flows', 'summary'],
   fn: (kospi, sp500, nasdaq, usdkrw, holdings_val, acct_eval, flows, summary) => {
-    const FROM = '2004-01', END = '2040-01', PATHS = 500, BOND_Y = 0.03, SAVE_Y = 0.025, DIV_Y = { kospi: 0.02, sp500: 0.015, nasdaq: 0.008 };
+    const FROM = '2004-01', END = '2060-01', PATHS = 500, BOND_Y = 0.03, SAVE_Y = 0.025, DIV_Y = { kospi: 0.02, sp500: 0.015, nasdaq: 0.008 };
     const owners = ['본인', '이솔', '이서'];
     const mp = (rows, ok) => { const m = new Map(); for (const r of rows) if (!ok || ok(r.close)) m.set(r.month, r.close); return m; };
     const K = mp(kospi), S = mp(sp500), N = mp(nasdaq), F = mp(usdkrw, (v) => v > 100);
@@ -1022,40 +1029,6 @@ dash.calc('sim_path', {
         out.push({ key: [r.combo, r.basis, level, month].join('|'), combo: r.combo, basis: r.basis, level, contrib: c, month,
           p10: Math.round(q(v, 0.1)), p50: Math.round(q(v, 0.5)), p90: Math.round(q(v, 0.9)), principal: Math.round(r.principal + c * r.steps[k]) });
       });
-    }
-    return out;
-  },
-});
-
-dash.calc('sim_sum', {
-  title: '2040년 1월 시뮬레이션 요약',
-  description: '월 납입액 단계별 2040년 1월 예상 자산(하위 10%·중앙값·상위 10%), 10억 원 목표 이상인 경로 비율, 중앙값 자산(저축 제외분)에 최근 12개월 내 배당수익률을 곱한 예상 월 배당, 경로의 50%·80%가 목표에 닿는 데 필요한 월 납입액(10만 원 단위 올림), 중앙값·하위 10% 경로가 목표를 처음 넘는 연초',
-  inputs: ['sim_base'],
-  fn: (sim_base) => {
-    const GOAL = 1000000000;
-    const q = (s, p) => s[Math.min(s.length - 1, Math.max(0, Math.round(p * (s.length - 1))))];
-    const out = [];
-    for (const r of sim_base) {
-      const k = r.labels.length - 1;
-      const need = r.A.map((a, p) => Math.max(0, (GOAL - a[k]) / r.B[p][k])).sort((x, y) => x - y);
-      const up = (v) => Math.ceil(v / 100000) * 100000;
-      const levels = [['avg', r.avg_contrib], ['0', 0], ['500000', 500000], ['1000000', 1000000], ['2000000', 2000000], ['3000000', 3000000]];
-      for (const [level, c] of levels) {
-        const v = r.A.map((a, p) => a[k] + c * r.B[p][k]).sort((x, y) => x - y);
-        const p50 = q(v, 0.5);
-        let gm50 = null, gm10 = null;
-        for (let j = 0; j <= k; j++) {
-          const vj = r.A.map((a, p) => a[j] + c * r.B[p][j]).sort((x, y) => x - y);
-          if (gm50 == null && q(vj, 0.5) >= GOAL) gm50 = r.labels[j];
-          if (gm10 == null && q(vj, 0.1) >= GOAL) gm10 = r.labels[j];
-        }
-        out.push({ key: [r.combo, r.basis, level].join('|'), combo: r.combo, basis: r.basis, level, contrib: c, avg_contrib: r.avg_contrib,
-          end_month: r.labels[k], value_now: Math.round(r.value), principal_end: Math.round(r.principal + c * r.steps[k]),
-          end_p10: Math.round(q(v, 0.1)), end_p50: Math.round(p50), end_p90: Math.round(q(v, 0.9)),
-          goal: GOAL, goal_prob: v.filter((x) => x >= GOAL).length / v.length,
-          div_month: Math.round(p50 * r.fi * r.div_yield_m), div_yield_y: r.div_yield_m * 12,
-          need50: up(q(need, 0.5)), need80: up(q(need, 0.8)), goal_month_p50: gm50, goal_month_p10: gm10, sample: r.sample });
-      }
     }
     return out;
   },
@@ -1331,6 +1304,10 @@ W.pfIdxList = [
   { id: 'usdkrw', name: '원/달러', color: P.fx, fx: true },
 ];
 W.pfIdxDefault = ['kospi', 'sp500', 'nasdaq', 'usdkrw'];
+// 목표 금액·연도(사용자 지정, 기본 10억·2040년 1월)
+W.pfGoalDefault = 1000000000; W.pfYearDefault = 2040; W.pfYearMax = 2060;
+W.pfGoal = () => { const g = Number(dash.params().sim_goal); return g > 0 ? g : W.pfGoalDefault; };
+W.pfGoalYear = () => { const y = Math.round(Number(dash.params().sim_year)); const min = new Date().getUTCFullYear() + 1; return y >= min && y <= W.pfYearMax ? y : Math.max(min, W.pfYearDefault); };
 W.pfIdxSel = () => { const s = dash.params().idx_sel; const ok = Array.isArray(s) ? s.filter((x) => W.pfIdxList.some((i) => i.id === x)) : []; return ok.length ? ok : W.pfIdxDefault; };
 const won = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 });
 const enc = (v) => String(v).replace(/[%&=,]/g, (c) => encodeURIComponent(c));
@@ -1383,8 +1360,10 @@ W.pfDraw = () => {
     const pct = (v) => (v == null ? '—' : (v * 100).toFixed(1) + '%');
     const bar = (id, v) => { document.getElementById(id).style.width = Math.max(0, Math.min(100, (v || 0) * 100)) + '%'; };
     setText('g1p', pct(gl.annual_pct)); bar('g1b', gl.annual_pct); setText('g1c', `목표 ${won.format(gl.annual_goal)}원 · 올해 ${won.format(gl.ytd_contrib)}원`);
-    setText('g2p', pct(gl.final_pct)); bar('g2b', gl.final_pct); setText('g2c', `목표 ${won.format(gl.final_goal)}원`);
-    setText('g3p', pct(gl.retire_pct)); bar('g3b', gl.retire_pct); setText('g3c', `2040년 1월 (${gl.months_done}개월 / ${gl.months_total}개월)`);
+    const goal = W.pfGoal(), gy = W.pfGoalYear(); const fp = gl.total_value == null ? null : gl.total_value / goal;
+    const mTot = (gy - 2024) * 12; const rp = gl.months_done / mTot;
+    setText('g2p', pct(fp)); bar('g2b', fp); setText('g2c', `목표 ${won.format(goal)}원`);
+    setText('g3p', pct(rp)); bar('g3b', rp); setText('g3c', `${gy}년 1월 (${gl.months_done}개월 / ${mTot}개월)`);
   }
   if (ta) {
     setText('h-prin', W.pfWon(ta.total_principal));
@@ -1635,7 +1614,29 @@ const encS = (v) => String(v).replace(/[%&=,|]/g, (c) => encodeURIComponent(c));
 const SIMC = { p50: '#22c55e', band: '#3b82f6', prin: '#cbd5e1', goal: '#eab308' };
 document.querySelectorAll('[data-sim-basis]').forEach((b) => b.addEventListener('click', () => dash.setParams({ sim_basis: b.dataset.simBasis })));
 document.querySelectorAll('[data-sim-level]').forEach((b) => b.addEventListener('click', () => dash.setParams({ sim_level: b.dataset.simLevel })));
-const ym = (m) => (m ? `${m.slice(0, 4)}년 ${Number(m.slice(5))}월` : '2040년 1월 이후');
+const ym = (m) => (m ? `${m.slice(0, 4)}년 ${Number(m.slice(5))}월` : '목표 시점 이후');
+const qS = (s, p) => s[Math.min(s.length - 1, Math.max(0, Math.round(p * (s.length - 1))))];
+// 목표 금액(goal)·목표 연도 1월(k번째 연초)·월 납입액(c)으로 요약 계산 — 예전 sim_sum 과 같은 방식
+W.pfSimSum = (r, c, goal, k) => {
+  const val = (j) => r.A.map((a, p) => a[j] + c * r.B[p][j]).sort((x, y) => x - y);
+  const v = val(k); const p50 = qS(v, 0.5);
+  const need = r.A.map((a, p) => Math.max(0, (goal - a[k]) / r.B[p][k])).sort((x, y) => x - y); const up = (x) => Math.ceil(x / 100000) * 100000;
+  let gm50 = null, gm10 = null;
+  for (let j = 0; j < r.labels.length && (gm50 == null || gm10 == null); j++) { const vj = val(j); if (gm50 == null && qS(vj, 0.5) >= goal) gm50 = r.labels[j]; if (gm10 == null && qS(vj, 0.1) >= goal) gm10 = r.labels[j]; }
+  return { end_month: r.labels[k], value_now: Math.round(r.value), principal_end: Math.round(r.principal + c * r.steps[k]),
+    end_p10: Math.round(qS(v, 0.1)), end_p50: Math.round(p50), end_p90: Math.round(qS(v, 0.9)), goal_prob: v.filter((x) => x >= goal).length / v.length,
+    div_month: Math.round(p50 * r.fi * r.div_yield_m), div_yield_y: r.div_yield_m * 12, need50: up(qS(need, 0.5)), need80: up(qS(need, 0.8)),
+    goal_month_p50: gm50, goal_month_p10: gm10, sample: r.sample, avg_contrib: r.avg_contrib };
+};
+W.pfSimSetGoal = () => {
+  const gi = document.getElementById('sim-goal'), yi = document.getElementById('sim-year'), msg = document.getElementById('sim-goal-msg');
+  const g = Number(String(gi.value).replace(/,/g, '')); const y = Number(yi.value);
+  if (!(g > 0) || g > 1000) { msg.textContent = '목표 금액은 0.1~1,000억 원 사이로 입력하세요'; return; }
+  msg.textContent = ''; dash.setParams({ sim_goal: Math.round(g * 1e8), sim_year: y });
+};
+document.getElementById('sim-goal').addEventListener('change', W.pfSimSetGoal);
+document.getElementById('sim-year').addEventListener('change', W.pfSimSetGoal);
+document.getElementById('sim-goal-reset').addEventListener('click', () => { document.getElementById('sim-goal-msg').textContent = ''; dash.setParams({ sim_goal: W.pfGoalDefault, sim_year: W.pfYearDefault }); });
 
 W.pfDrawSim = () => {
   if (W.pfTab !== 'sim') return;
@@ -1643,43 +1644,57 @@ W.pfDrawSim = () => {
   document.querySelectorAll('[data-sim-basis]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.simBasis === basis)));
   document.querySelectorAll('[data-sim-level]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.simLevel === level)));
   const where = `combo=${encS(combo)}&basis=${encS(basis)}&level=${encS(level)}`;
-  document.querySelectorAll('#sim [data-source="sim_sum"][data-field]').forEach((el) => el.setAttribute('data-where', where));
+  document.querySelectorAll('#sim [data-source="sim_base"][data-field]').forEach((el) => el.setAttribute('data-where', where));
   const put = (id, t) => { const el = document.getElementById(id); if (el) { el.textContent = t; el.classList.remove('dash-skeleton'); } return el; };
 
-  const ss = dash.data('sim_sum');
-  if (ss.status === 'ok') {
-    const s = ss.data.find((r) => r.combo === combo && r.basis === basis && r.level === level);
-    const avgRow = ss.data.find((r) => r.combo === combo && r.basis === basis && r.level === 'avg');
-    if (avgRow) document.getElementById('btn-sim-avg').textContent = `최근 평균 ${W.pfShort(avgRow.avg_contrib)}`;
-    if (s) {
+  const goal = W.pfGoal(), gy = W.pfGoalYear(), gShort = W.pfShort(goal), endM = `${gy}-01`;
+  const gi = document.getElementById('sim-goal'), yi = document.getElementById('sim-year');
+  if (document.activeElement !== gi) gi.value = String(+(goal / 1e8).toFixed(2));
+  const sb = dash.data('sim_base');
+  const base = sb.status === 'ok' ? sb.data.find((r) => r.combo === combo && r.basis === basis) : null;
+  if (base && document.activeElement !== yi) {
+    const ys = base.labels.slice(1).map((m) => Number(m.slice(0, 4)));
+    if (yi.options.length !== ys.length) yi.replaceChildren(...ys.map((y) => { const o = document.createElement('option'); o.value = String(y); o.textContent = String(y); return o; }));
+    yi.value = String(gy);
+  }
+  document.getElementById('sim-goal-reset').setAttribute('aria-pressed', String(goal === W.pfGoalDefault && gy === W.pfYearDefault));
+  put('lb-sim-prob', `${gShort} 원 목표 달성 확률`); put('lb-sim-div', `${gy}년 1월 예상 월 배당`);
+  let kEnd = base ? base.labels.indexOf(endM) : -1; if (base && kEnd < 0) kEnd = base.labels.length - 1;
+  if (base) document.getElementById('btn-sim-avg').textContent = `최근 평균 ${W.pfShort(base.avg_contrib)}`;
+  if (sb.status === 'error') ['s-end', 's-prob', 's-when', 's-div', 's-need'].forEach((id) => W.pfFail(document.getElementById(id)));
+  if (base) {
+    const c = level === 'avg' ? base.avg_contrib : Number(level);
+    const s = W.pfSimSum(base, c, goal, kEnd);
+    {
       put('lb-sim-end', `${ym(s.end_month)} 예상 자산 (중앙값)`);
       put('s-end', W.pfWon(s.end_p50));
       put('s-end-sub', `하위 10% ${W.pfShort(s.end_p10)} ~ 상위 10% ${W.pfShort(s.end_p90)} · 원금 ${W.pfShort(s.principal_end)}`);
       put('s-prob', `${Math.round(s.goal_prob * 100)}%`);
-      put('s-prob-sub', `500개 경로 중 ${ym(s.end_month)}에 10억 원 이상인 비율 · 현재 ${W.pfShort(s.value_now)}`);
-      put('s-when', s.goal_month_p50 ? ym(s.goal_month_p50) : '기간 내 미도달');
-      put('s-when-sub', `중앙값 기준(연초 단위) · 보수적(하위 10%) ${s.goal_month_p10 ? ym(s.goal_month_p10) : '기간 내 미도달'}`);
+      put('s-prob-sub', `500개 경로 중 ${ym(s.end_month)}에 ${gShort} 원 이상인 비율 · 현재 ${W.pfShort(s.value_now)}`);
+      put('s-when', s.goal_month_p50 ? ym(s.goal_month_p50) : `${W.pfYearMax}년까지 미도달`);
+      put('s-when-sub', `중앙값 기준(연초 단위) · 보수적(하위 10%) ${s.goal_month_p10 ? ym(s.goal_month_p10) : `${W.pfYearMax}년까지 미도달`} · 목표 연도와 상관없이 ${W.pfYearMax}년까지 탐색`);
       put('s-div', W.pfWon(s.div_month));
       put('s-div-sub', `중앙값 자산 × 최근 12개월 배당수익률 연 ${(s.div_yield_y * 100).toFixed(1)}%`);
       put('s-need', s.need50 > 0 ? W.pfWon(s.need50) : '추가 납입 없이 도달');
       put('s-need-sub', s.need80 > 0 ? `확률 50% 기준 · 80%로 높이려면 ${W.pfShort(s.need80)}` : '확률 80% 기준으로도 추가 납입 불필요');
-      document.getElementById('nt-sim').textContent = `${s.sample} 월간 수익률(미국 지수는 원/달러 변동 포함)을 무작위로 다시 뽑아 만든 500가지 미래 경로로 ${ym(s.end_month)}(은퇴 목표)까지의 자산 범위를 추정합니다. 매달 같은 비중으로 재조정하고 지수 배당은 재투자한다고 가정했습니다. 과거 흐름에 기댄 추정이며 미래 수익을 보장하지 않습니다.`;
+      document.getElementById('nt-sim').textContent = `${s.sample} 월간 수익률(미국 지수는 원/달러 변동 포함)을 무작위로 다시 뽑아 만든 500가지 미래 경로로 ${ym(s.end_month)}(목표 시점)까지의 자산 범위를 추정합니다(목표는 위에서 바꿀 수 있음). 매달 같은 비중으로 재조정하고 지수 배당은 재투자한다고 가정했습니다. 과거 흐름에 기댄 추정이며 미래 수익을 보장하지 않습니다.`;
     }
   }
 
   const box = document.getElementById('ch-sim-path'); const sp = dash.data('sim_path');
   if (sp.status === 'ok') {
     box.classList.remove('dash-skeleton');
-    const r = sp.data.filter((x) => x.combo === combo && x.basis === basis && x.level === level);
+    const r = sp.data.filter((x) => x.combo === combo && x.basis === basis && x.level === level && x.month <= endM);
     const X = (x) => W.pfMonthDate(x.month);
     const ser = [
       { name: '상위 10%', color: SIMC.band, dash: true, values: r.map((x) => ({ x: X(x), y: x.p90 })) },
       { name: '중앙값', color: SIMC.p50, width: 3.5, area: true, values: r.map((x) => ({ x: X(x), y: x.p50 })) },
       { name: '하위 10%', color: SIMC.band, dash: true, values: r.map((x) => ({ x: X(x), y: x.p10 })) },
       { name: '누적 원금', color: SIMC.prin, dash: true, values: r.map((x) => ({ x: X(x), y: x.principal })) },
-      { name: '목표 10억', color: SIMC.goal, dash: true, width: 1.5, values: r.map((x) => ({ x: X(x), y: 1000000000 })) },
+      { name: `목표 ${gShort}`, color: SIMC.goal, dash: true, width: 1.5, values: r.map((x) => ({ x: X(x), y: goal })) },
     ];
     W.pfLegend(document.getElementById('lg-sim-path'), ser);
+    document.getElementById('nt-sim-path').textContent = `연초마다 500개 경로 중 하위 10%·중앙값·상위 10% 자산과 누적 원금(${gy}년 1월까지). 점선 가로선은 ${gShort} 원 목표입니다.`;
     W.pfLine(box, ser, { xfmt: d3.utcFormat('%Y'), tipTitle: (xv) => d3.utcFormat('%Y년 %m월')(xv) });
   } else if (sp.status === 'error') W.pfFail(box);
 
