@@ -110,6 +110,98 @@
     render();
   }
 
+  // ---------- 보유종목 편집 ----------
+  const won = (v) => (v == null || v === '' ? '' : Number(v).toLocaleString('ko-KR', { maximumFractionDigits: 4 }));
+  const CLS = ['', '로우베타', '하이베타', '알파'];
+
+  function openHold() {
+    const { box, close } = modal('보유종목 관리');
+    const msg = h('p', 'app-msg');
+    const list = h('div', 'app-wl');
+    const formBox = h('div', 'app-form');
+    const addBtn = h('button', 'app-primary', '+ 종목 추가');
+    addBtn.onclick = () => edit(null);
+
+    async function act(p) {
+      msg.textContent = '저장 중…';
+      try { await api.call(p); await api.load(true); msg.textContent = '시트에 저장했습니다.'; renderList(); formBox.replaceChildren(); addBtn.hidden = false; list.hidden = false; return true; }
+      catch (e) { msg.textContent = '실패: ' + e.message; return false; }
+    }
+
+    function renderList() {
+      list.replaceChildren();
+      const rows = api.holdRows();
+      if (!rows.length) { list.append(h('p', 'app-msg', '입력된 보유종목이 없습니다.')); return; }
+      const byAcct = new Map();
+      for (const r of rows) { const k = r.owner + ' · ' + r.account; if (!byAcct.has(k)) byAcct.set(k, []); byAcct.get(k).push(r); }
+      for (const [k, rs] of byAcct) {
+        list.append(h('h3', null, k));
+        for (const r of rs) {
+          const row = h('button', 'app-wl-row app-hold'); row.type = 'button';
+          const nm = h('div', 'nm'); nm.append(h('b', null, r.name), h('small', null, `${r.code} · ${won(r.qty)}주 · 평단 ${won(r.avg)}${r.ccy === 'USD' ? '$' : '원'}${r.cls ? ' · ' + r.cls : ''}`));
+          row.append(nm, h('span', 'app-chev', '›'));
+          row.onclick = () => edit(r);
+          list.append(row);
+        }
+      }
+    }
+
+    function edit(r) {
+      list.hidden = true; addBtn.hidden = true; msg.textContent = '';
+      const meta = (window.dash.data('acct_meta').data || []);
+      const acct = h('select');
+      for (const m of meta) { const o = h('option', null, `${m.owner} · ${m.account}`); o.value = m.account; o.dataset.owner = m.owner; acct.append(o); }
+      if (r) acct.value = r.account;
+      const nm = h('input'); nm.placeholder = '예: TIGER 미국S&P500'; nm.value = r ? r.name : '';
+      const cd = h('input'); cd.placeholder = '예: 360750, SCHD'; cd.value = r ? r.code : ''; cd.autocapitalize = 'characters';
+      const ccy = h('select'); for (const v of ['KRW', 'USD']) { const o = h('option', null, v === 'KRW' ? '원(KRW)' : '달러(USD)'); o.value = v; ccy.append(o); }
+      ccy.value = r ? r.ccy : 'KRW';
+      cd.oninput = () => { if (/^[A-Za-z]/.test(cd.value)) ccy.value = 'USD'; else if (/^\d/.test(cd.value)) ccy.value = 'KRW'; };
+      const qty = h('input'); qty.inputMode = 'decimal'; qty.placeholder = '보유 수량'; qty.value = r && r.qty != null ? r.qty : '';
+      const avg = h('input'); avg.inputMode = 'decimal'; avg.placeholder = '평균 매입단가'; avg.value = r && r.avg != null ? r.avg : '';
+      const man = h('input'); man.inputMode = 'decimal'; man.placeholder = '비우면 구글 금융 시세'; man.value = r && r.manual != null ? r.manual : '';
+      const cls = h('select'); for (const v of CLS) { const o = h('option', null, v || '자동'); o.value = v; cls.append(o); }
+      cls.value = r ? r.cls : '';
+      const r1 = h('div', 'app-row'); r1.append(field('코드', cd), field('통화', ccy));
+      const r2 = h('div', 'app-row'); r2.append(field('보유 수량', qty), field('평균 매입단가', avg));
+      const r3 = h('div', 'app-row'); r3.append(field('수동 현재가(선택)', man), field('자산 분류', cls));
+      const save = h('button', 'app-primary', r ? '수정 저장' : '추가');
+      const cancel = h('button', 'app-ghost', '취소');
+      cancel.onclick = () => { formBox.replaceChildren(); list.hidden = false; addBtn.hidden = false; msg.textContent = ''; };
+      save.onclick = async () => {
+        const opt = acct.selectedOptions[0];
+        if (!opt || !nm.value.trim() || !cd.value.trim() || qty.value === '' || avg.value === '') { msg.textContent = '계좌·종목명·코드·수량·평균단가를 입력하세요.'; return; }
+        save.disabled = true;
+        const p = { action: 'hold_save', owner: opt.dataset.owner, account: opt.value, name: nm.value.trim(), code: cd.value.trim(), ccy: ccy.value,
+          qty: qty.value, avg: avg.value, manual: man.value, cls: cls.value };
+        if (r) Object.assign(p, { row: r.row, orig_code: r.code, orig_account: r.account });
+        if (!(await act(p))) save.disabled = false;
+      };
+      formBox.replaceChildren(h('h3', null, r ? '종목 수정' : '종목 추가'), field('계좌', acct), field('종목명', nm), r1, r2, r3, save, cancel);
+      if (r) {
+        const del = h('button', 'app-ghost danger', '이 종목 삭제(전량 매도)');
+        del.onclick = async () => {
+          if (!del.dataset.ok) { del.dataset.ok = '1'; del.textContent = '한 번 더 누르면 삭제합니다'; return; }
+          del.disabled = true; if (!(await act({ action: 'hold_del', row: r.row, code: r.code, account: r.account }))) del.disabled = false;
+        };
+        formBox.append(del);
+      }
+      nm.focus();
+    }
+
+    box.append(h('p', 'app-msg', '수량·평균단가를 바꾸면 구글 시트 보유종목 탭에 바로 저장되고, 현재가·평가금액은 시트가 다시 계산합니다. 일부만 팔았으면 수량을 줄이고, 전부 팔았으면 삭제하세요.'), addBtn, formBox, list, msg);
+    renderList();
+    return close;
+  }
+
+  function wireHoldButton() {
+    const nt = document.getElementById('nt-holdings');
+    if (!nt) return;
+    nt.textContent = '현재가는 구글 시트 보유종목 탭 값(구글 금융·수동 입력), 없으면 최근 종가. 달러 종목은 현재 환율로 원화 환산.';
+    const b = h('button', 'app-primary', '보유종목 추가·수정');
+    b.onclick = openHold; nt.after(b);
+  }
+
   function wireWatchLink() {
     const a = document.querySelector('#card-watch .pf-editlink');
     if (!a) return;
@@ -117,10 +209,11 @@
     b.onclick = openWatch; a.replaceWith(b);
   }
 
-  window.pfApp = { status, openSettings, openWatch };
+  window.pfApp = { status, openSettings, openWatch, openHold };
   document.addEventListener('DOMContentLoaded', () => {
     document.body.prepend(bar);
     wireWatchLink();
+    wireHoldButton();
     api.boot();
     if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('sw.js'); } catch (e) { /* noop */ } }
     if (!api.cfg().url || !api.cfg().key) openSettings(true);

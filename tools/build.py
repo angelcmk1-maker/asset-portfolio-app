@@ -71,7 +71,10 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
 .app-wl-row.off{opacity:.5}
 .app-wl-row .nm{flex:1;min-width:0;display:flex;flex-direction:column}
 .app-wl-row small{color:var(--color-fg-muted);font-size:11px}
-#card-watch .app-primary{align-self:flex-start;margin-top:8px}
+#card-watch .app-primary,#card-holdings>.app-primary{align-self:flex-start;margin:8px 0}
+.app-hold{font:inherit;text-align:left;background:var(--color-bg);color:var(--color-fg);cursor:pointer;width:100%}
+.app-chev{color:var(--color-fg-muted);font-size:20px}
+.app-sheet [hidden]{display:none}
 """
 
 html = f"""<!doctype html>

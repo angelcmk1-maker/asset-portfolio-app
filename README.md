@@ -20,7 +20,7 @@
 |---|---|
 | `src/page.html` | 대시보드 화면(claude.ai 대시보드와 같은 코드) |
 | `web/js/shim.js` | 대시보드의 `dash` API를 Apps Script 데이터로 대신하는 계층 |
-| `web/js/app.js` | 설정(URL·키), 새로고침, 관심종목 편집 |
+| `web/js/app.js` | 설정(URL·키), 새로고침, 관심종목·보유종목 편집 |
 | `tools/build.py` | `src/page.html` → `web/index.html` |
 | `apps-script/Code.gs` | 구글 시트에 붙이는 데이터 API |
 | `android-keystore/debug.keystore` | APK 서명 키(업데이트 설치가 되도록 고정) |

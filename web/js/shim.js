@@ -37,7 +37,9 @@
   const MARKET_IDS = ['kospi', 'sp500', 'nasdaq', 'usdkrw', 'usdvnd'];
   const num = (x) => { const t = String(x == null ? '' : x).replace(/[,\s₩$%]/g, ''); return t === '' || isNaN(Number(t)) ? null : Number(t); };
 
+  let RAW = {};
   function ingest(api) {
+    RAW = api.sheets || {};
     for (const k of Object.keys(DATA)) delete DATA[k];
     for (const k of Object.keys(ERR)) delete ERR[k];
     const S = api.sheets || {}; const M = api.market || {};
@@ -129,5 +131,11 @@
     if (cfg().url && cfg().key) load(false);
   }
 
-  window.pfApi = { load, call, boot, cfg, store, state, ingest, setConfig(url, key) { store.set('pf_api_url', url.trim()); store.set('pf_api_key', key.trim()); }, clear() { store.del('pf_cache'); } };
+  // 보유종목 편집용: 시트 줄 번호(6행부터)를 붙인 원본 행
+  function holdRows() {
+    return (RAW.holdings || []).map((r, i) => ({ row: 6 + i, owner: r[0] || '', account: r[1] || '', name: r[2] || '', code: String(r[3] || '').replace(/^'/, ''),
+      ccy: r[4] || 'KRW', qty: num(r[5]), avg: num(r[6]), price: num(r[9]) != null ? num(r[9]) : num(r[7]), manual: num(r[8]), cls: String(r[18] || '').trim() }))
+      .filter((x) => String(x.name).trim() !== '');
+  }
+  window.pfApi = { holdRows, load, call, boot, cfg, store, state, ingest, setConfig(url, key) { store.set('pf_api_url', url.trim()); store.set('pf_api_key', key.trim()); }, clear() { store.del('pf_cache'); } };
 })();

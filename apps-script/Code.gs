@@ -61,6 +61,8 @@ function doGet(e) {
     if (action === 'watch_del') return json_(watchDel_(p));
     if (action === 'watch_toggle') return json_(watchToggle_(p));
     if (action === 'market_refresh') { refreshMarket(); return json_({ ok: true }); }
+    if (action === 'hold_save') return json_(holdSave_(p));
+    if (action === 'hold_del') return json_(holdDel_(p));
     return json_({ ok: false, error: 'unknown_action' });
   } catch (err) {
     return json_({ ok: false, error: 'server', message: String(err && err.message || err) });
@@ -141,6 +143,74 @@ function market_() {
     vals2.forEach((r) => { if (r[0] && missing.includes(r[0]) && r[2]) { out[r[0]] = JSON.parse(r[2]); try { cache.put('mk_' + r[0], r[2], 21600); } catch (e) {} } });
   }
   return out;
+}
+
+// ---------- 보유종목 편집 ----------
+// 입력 칸만 건드린다: A 소유자, B 계좌, C 종목명, D 코드, E 통화, F 수량, G 평균단가, I 수동 현재가, S 자산 분류.
+// H(현재가)·J~R(계산)은 시트 수식이 그대로 계산한다.
+const HOLD_FIRST = 6, HOLD_LAST = 65;
+function holdSheet_() { return SpreadsheetApp.getActiveSpreadsheet().getSheetByName('보유종목'); }
+function holdRead_(sh) {
+  const n = HOLD_LAST - HOLD_FIRST + 1;
+  const ag = sh.getRange(HOLD_FIRST, 1, n, 7).getValues();
+  const i = sh.getRange(HOLD_FIRST, 9, n, 1).getValues();
+  const s = sh.getRange(HOLD_FIRST, 19, n, 1).getValues();
+  return ag.map((r, k) => r.concat([i[k][0], s[k][0]]));
+}
+function holdWrite_(sh, rows) {
+  const n = HOLD_LAST - HOLD_FIRST + 1;
+  const pad = rows.concat(Array.from({ length: n - rows.length }, () => ['', '', '', '', '', '', '', '', '']))
+    .map((r) => { const c = String(r[3] == null ? '' : r[3]); const q = r.slice(); q[3] = c === '' || c[0] === "'" ? c : "'" + c; return q; }); // 코드 앞 0 보존
+  sh.getRange(HOLD_FIRST, 1, n, 7).setValues(pad.map((r) => r.slice(0, 7)));
+  sh.getRange(HOLD_FIRST, 9, n, 1).setValues(pad.map((r) => [r[7]]));
+  sh.getRange(HOLD_FIRST, 19, n, 1).setValues(pad.map((r) => [r[8]]));
+}
+function numOrBlank_(v) {
+  const t = String(v == null ? '' : v).replace(/[,\s]/g, '');
+  if (t === '') return '';
+  const x = Number(t); if (isNaN(x)) throw new Error('숫자가 아닙니다: ' + v);
+  return x;
+}
+function holdSave_(p) {
+  const name = String(p.name || '').trim(); const code = normCode_(p.code);
+  if (!p.owner || !p.account || !name || !code) return { ok: false, error: 'invalid', message: '소유자·계좌·종목명·코드를 입력하세요.' };
+  const qty = numOrBlank_(p.qty), avg = numOrBlank_(p.avg);
+  if (qty === '' || avg === '') return { ok: false, error: 'invalid', message: '수량과 평균 매입단가를 입력하세요.' };
+  const ccy = String(p.ccy || 'KRW').toUpperCase() === 'USD' ? 'USD' : 'KRW';
+  const row = [p.owner, p.account, name, "'" + code, ccy, qty, avg, numOrBlank_(p.manual), String(p.cls || '').trim()];
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const sh = holdSheet_(); const rows = holdRead_(sh);
+    const used = rows.filter((r) => String(r[2]).trim() !== '');
+    if (p.row) { // 기존 줄 수정: 그 줄이 여전히 같은 종목인지 확인
+      const k = Number(p.row) - HOLD_FIRST; const cur = rows[k];
+      if (!cur || normCode_(cur[3]) !== normCode_(p.orig_code || code) || String(cur[1]) !== String(p.orig_account || p.account)) {
+        return { ok: false, error: 'conflict', message: '시트 내용이 바뀌었습니다. 새로고침 후 다시 시도하세요.' };
+      }
+      rows[k] = row;
+      holdWrite_(sh, rows);
+    } else {
+      if (used.length >= rows.length) return { ok: false, error: 'full', message: '보유종목 칸(60줄)이 가득 찼습니다.' };
+      const dup = rows.findIndex((r) => String(r[1]) === String(p.account) && normCode_(r[3]) === code);
+      if (dup >= 0) return { ok: false, error: 'duplicate', message: '같은 계좌에 이미 있는 종목입니다. 목록에서 눌러 수정하세요.' };
+      used.push(row);
+      holdWrite_(sh, used);
+    }
+  } finally { lock.releaseLock(); }
+  return { ok: true };
+}
+function holdDel_(p) {
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const sh = holdSheet_(); const rows = holdRead_(sh);
+    const k = Number(p.row) - HOLD_FIRST; const cur = rows[k];
+    if (!cur || normCode_(cur[3]) !== normCode_(p.code) || String(cur[1]) !== String(p.account)) {
+      return { ok: false, error: 'conflict', message: '시트 내용이 바뀌었습니다. 새로고침 후 다시 시도하세요.' };
+    }
+    rows.splice(k, 1); // 아래 줄을 한 칸씩 올려 빈 줄이 생기지 않게 함
+    holdWrite_(sh, rows.filter((r) => String(r[2]).trim() !== ''));
+  } finally { lock.releaseLock(); }
+  return { ok: true };
 }
 
 // ---------- 관심종목 편집 ----------
