@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   const LOADERS = {}; const CALCS = {}; const DATA = {}; const ERR = {}; const CBS = [];
-  const DEFAULT_PARAMS = { owners: ['본인', '이솔', '이서'], gran: '월', range: '전체', fx: 'krw', sim_basis: 'mix', sim_level: 'avg', rep_type: '전체', risk_other: 'Y' };
+  const DEFAULT_PARAMS = { owners: ['본인', '이솔', '이서'], gran: '월', fx: 'krw', sim_basis: 'mix', sim_level: 'avg', rep_type: '전체', risk_other: 'Y' };
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* 저장 공간 없음 */ } },

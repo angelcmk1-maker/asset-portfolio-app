@@ -8,6 +8,9 @@
 .pf-grp{display:flex;align-items:center;gap:var(--cds-gap-xs);flex-wrap:wrap}
 .pf-grp>span{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);margin-right:2px}
 .pf-btn{font:inherit;font-size:var(--cds-font-size-caption);padding:4px 10px;border-radius:999px;border:1px solid var(--color-border-line);background:var(--color-panel);color:var(--color-fg-muted);cursor:pointer}
+.pf-month{font:inherit;font-size:var(--cds-font-size-caption);padding:3px 8px;border-radius:8px;border:1px solid var(--color-border-line);background:var(--color-panel);color:var(--color-fg);min-width:8.5em;color-scheme:light dark}
+.pf-tilde{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
+.pf-rg-msg{font-size:var(--cds-font-size-caption);color:var(--color-bad)}
 .pf-btn[aria-pressed=true]{background:var(--color-fg);color:var(--color-bg);border-color:var(--color-fg)}
 .pf-tabs{display:flex;gap:var(--cds-gap-xs);border-bottom:1px solid var(--color-border-line);overflow-x:auto}
 .pf-tab{font:inherit;font-size:var(--cds-font-size-body);padding:8px 12px;background:none;border:0;border-bottom:2px solid transparent;color:var(--color-fg-muted);cursor:pointer;white-space:nowrap}
@@ -168,10 +171,11 @@
       <button class="pf-btn" data-gran="연">연</button>
     </div>
     <div class="pf-grp pf-x" id="ctl-range"><span>기간</span>
-      <button class="pf-btn" data-range="1년">1년</button>
-      <button class="pf-btn" data-range="3년">3년</button>
-      <button class="pf-btn" data-range="5년">5년</button>
-      <button class="pf-btn" data-range="전체">투자 시작 이후</button>
+      <input class="pf-month" type="month" id="rg-from" min="2015-01" aria-label="시작 월">
+      <span class="pf-tilde">~</span>
+      <input class="pf-month" type="month" id="rg-to" min="2015-01" aria-label="끝 월">
+      <button class="pf-btn" id="rg-reset">투자 시작 이후</button>
+      <span class="pf-rg-msg" id="rg-msg"></span>
     </div>
     <div class="pf-grp pf-x" id="ctl-fx"><span>통화</span>
       <button class="pf-btn" data-fx="krw">원화 환산</button>
@@ -1096,10 +1100,17 @@ W.pfShort = (v) => {
 W.pfPct = (v, sign = true) => (v == null || isNaN(v) ? '—' : (sign && v > 0 ? '+' : '') + (v * 100).toFixed(1) + '%');
 W.pfSign = (el, v) => { el.classList.toggle('pf-pos', v > 0); el.classList.toggle('pf-neg', v < 0); };
 W.pfFail = (el) => { el.replaceChildren(); const d = document.createElement('div'); d.className = 'pf-fail'; d.textContent = 'Failed to load'; el.append(d); el.classList.remove('dash-skeleton'); };
-W.pfRangeStart = (endMonth) => {
-  const r = dash.params().range || '전체'; const n = { '1년': 12, '3년': 36, '5년': 60 }[r]; if (!n) return '0000-00';
-  const d = new Date(Date.UTC(Number(endMonth.slice(0, 4)), Number(endMonth.slice(5)) - 1 - n + 1, 1)); return d.toISOString().slice(0, 7);
-};
+// 기간: 사용자가 고른 시작 월(from)~끝 월(to). 비어 있으면 투자 시작(2024-01)~최근
+W.pfStartDefault = '2024-01';
+W.pfIsMonth = (m) => typeof m === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(m);
+W.pfFrom = () => { const f = dash.params().from; return W.pfIsMonth(f) ? f : W.pfStartDefault; };
+W.pfTo = () => { const t = dash.params().to; return W.pfIsMonth(t) ? t : '9999-12'; };
+W.pfRangeStart = () => W.pfFrom();
+W.pfRangeEnd = () => W.pfTo();
+W.pfInRange = (m) => m >= W.pfFrom() && m <= W.pfTo();
+W.pfPrevMonth = (m) => new Date(Date.UTC(Number(m.slice(0, 4)), Number(m.slice(5)) - 2, 1)).toISOString().slice(0, 7);
+W.pfRangeLabel = () => { const f = W.pfFrom(), t = dash.params().to; const d = (m) => m.replace('-', '.');
+  if (f === W.pfStartDefault && !W.pfIsMonth(t)) return '투자 시작 이후'; return `${d(f)}~${W.pfIsMonth(t) ? d(t) : '현재'}`; };
 W.pfMonthDate = (m) => new Date(Date.UTC(Number(m.slice(0, 4)), Number(m.slice(5)) - 1, 15));
 
 W.pfLegend = (el, items) => {
@@ -1242,10 +1253,14 @@ W.pfSetBtns = () => {
   const p = dash.params(); const owners = p.owners || W.pfOwners;
   document.querySelectorAll('[data-owner]').forEach((b) => b.setAttribute('aria-pressed', String(owners.includes(b.dataset.owner))));
   document.querySelectorAll('[data-gran]').forEach((b) => b.setAttribute('aria-pressed', String((p.gran || '월') === b.dataset.gran)));
-  document.querySelectorAll('[data-range]').forEach((b) => b.setAttribute('aria-pressed', String((p.range || '전체') === b.dataset.range)));
+  const rf = document.getElementById('rg-from'), rt = document.getElementById('rg-to'), now = new Date().toISOString().slice(0, 7);
+  if (rf && document.activeElement !== rf) rf.value = W.pfFrom();
+  if (rt && document.activeElement !== rt) rt.value = W.pfIsMonth(p.to) ? p.to : '';
+  if (rf) { rf.max = now; } if (rt) { rt.max = now; rt.min = W.pfFrom(); }
+  const rr = document.getElementById('rg-reset'); if (rr) rr.setAttribute('aria-pressed', String(W.pfRangeLabel() === '투자 시작 이후'));
   document.querySelectorAll('[data-fx]').forEach((b) => b.setAttribute('aria-pressed', String((p.fx || 'krw') === b.dataset.fx)));
   const sum = document.getElementById('pf-filter-sum');
-  if (sum) sum.textContent = `· ${p.gran || '월'} · ${(p.range || '전체') === '전체' ? '2024~' : p.range} · ${(p.fx || 'krw') === 'krw' ? '원화' : '현지'}`;
+  if (sum) sum.textContent = `· ${p.gran || '월'} · ${W.pfRangeLabel() === '투자 시작 이후' ? '2024~' : W.pfRangeLabel()} · ${(p.fx || 'krw') === 'krw' ? '원화' : '현지'}`;
 };
 document.querySelectorAll('[data-owner]').forEach((b) => b.addEventListener('click', () => {
   const cur = dash.params().owners || W.pfOwners; const o = b.dataset.owner;
@@ -1253,7 +1268,14 @@ document.querySelectorAll('[data-owner]').forEach((b) => b.addEventListener('cli
   dash.setParams({ owners: W.pfOwners.filter((x) => next.includes(x)) });
 }));
 document.querySelectorAll('[data-gran]').forEach((b) => b.addEventListener('click', () => dash.setParams({ gran: b.dataset.gran })));
-document.querySelectorAll('[data-range]').forEach((b) => b.addEventListener('click', () => dash.setParams({ range: b.dataset.range })));
+W.pfSetRange = () => {
+  const f = document.getElementById('rg-from').value, t = document.getElementById('rg-to').value, msg = document.getElementById('rg-msg');
+  if (f && !W.pfIsMonth(f) || t && !W.pfIsMonth(t)) { msg.textContent = 'YYYY-MM 형식으로 입력하세요'; return; }
+  if (f && t && t < f) { msg.textContent = '끝 월이 시작 월보다 빠릅니다'; return; }
+  msg.textContent = ''; dash.setParams({ from: f || W.pfStartDefault, to: t || '' });
+};
+['rg-from', 'rg-to'].forEach((id) => document.getElementById(id).addEventListener('change', W.pfSetRange));
+document.getElementById('rg-reset').addEventListener('click', () => { document.getElementById('rg-msg').textContent = ''; dash.setParams({ from: W.pfStartDefault, to: '' }); });
 document.querySelectorAll('[data-fx]').forEach((b) => b.addEventListener('click', () => dash.setParams({ fx: b.dataset.fx })));
 
 const fb = document.getElementById('pf-filter');
@@ -1351,7 +1373,7 @@ W.pfDraw = () => {
     const box = document.getElementById('ch-home-growth');
     if (per.status === 'ok') {
       box.classList.remove('dash-skeleton');
-      const r = rows('월').filter((x) => x.end_month >= W.pfRangeStart(rows('월').slice(-1)[0].end_month));
+      const r = rows('월').filter((x) => W.pfInRange(x.end_month));
       const ser = [{ name: '장부 자산', color: P.mine, width: 3, area: true, values: r.map((x) => ({ x: W.pfMonthDate(x.end_month), y: x.book })) },
         { name: '납입 원금', color: P.nq, dash: true, values: r.map((x) => ({ x: W.pfMonthDate(x.end_month), y: x.cum_contrib })) }];
       W.pfLegend(document.getElementById('lg-home-growth'), ser); W.pfLine(box, ser);
@@ -1391,7 +1413,7 @@ W.pfDraw = () => {
     const box = document.getElementById('ch-flow'); const box2 = document.getElementById('ch-cum');
     document.getElementById('h-flow').textContent = `${gran}별 납입·배당·이자`;
     if (per.status === 'ok') {
-      const all = rows(gran); const start = W.pfRangeStart(all.slice(-1)[0].end_month); const r = all.filter((x) => x.end_month >= start);
+      const all = rows(gran); const r = all.filter((x) => W.pfInRange(x.end_month));
       box.classList.remove('dash-skeleton'); box2.classList.remove('dash-skeleton');
       const cats = r.map((x) => ({ label: x.period, tick: gran === '월' ? x.period.replace('-', '.') : x.period }));
       const ser = [{ name: '납입', color: P.kospi, values: r.map((x) => x.contrib) }, { name: '배당', color: P.mine, values: r.map((x) => x.dividend) }, { name: '이자', color: P.gold, values: r.map((x) => x.interest) }];
@@ -1445,12 +1467,12 @@ W.pfDraw = () => {
     document.getElementById('h-divbar').textContent = `${gran}별 배당·분배금`;
     if (per.status === 'ok') {
       box.classList.remove('dash-skeleton'); box2.classList.remove('dash-skeleton');
-      const all = rows(gran); const start = W.pfRangeStart(all.slice(-1)[0].end_month); const r = all.filter((x) => x.end_month >= start && x.cum_dividend > 0);
+      const all = rows(gran); const r = all.filter((x) => W.pfInRange(x.end_month) && x.cum_dividend > 0);
       const cats = r.map((x) => ({ label: x.period, tick: gran === '월' ? x.period.replace('-', '.') : x.period }));
       const ser = [{ name: '배당·분배금', color: P.gray, values: r.map((x) => x.dividend) }];
       const line = gran === '월' ? { name: '12개월 월평균', color: P.kospi, values: r.map((x) => x.div_avg12) } : null;
       W.pfLegend(document.getElementById('lg-divbar'), [{ name: '배당·분배금', color: P.gray }, { name: '최근 기간', color: P.mine }, ...(line ? [line] : [])]); W.pfBars(box, cats, ser, { line, hiLast: P.mine });
-      const m = rows('월').filter((x) => x.end_month >= start && x.cum_dividend > 0);
+      const m = rows('월').filter((x) => W.pfInRange(x.end_month) && x.cum_dividend > 0);
       W.pfLine(box2, [{ name: '누적 배당', color: P.kospi, width: 3, area: true, values: m.map((x) => ({ x: W.pfMonthDate(x.end_month), y: x.cum_dividend })) }], { height: 200 });
       const tb = document.querySelector('#tb-divyear tbody');
       tb.replaceChildren(...rows('연').filter((x) => x.dividend > 0).reverse().map((x) => {
@@ -1474,8 +1496,8 @@ W.pfDraw = () => {
     const box = document.getElementById('ch-bench'); const bn = dash.data('bench'); const k = fx === 'krw' ? '_fx' : '';
     if (bn.status === 'ok') {
       box.classList.remove('dash-skeleton');
-      const all = bn.data.filter((r) => r.combo === combo); const start = all.length ? W.pfRangeStart(all[all.length - 1].month) : '0';
-      const r = all.filter((x) => x.month >= start); const X = (x) => W.pfMonthDate(x.month);
+      const all = bn.data.filter((r) => r.combo === combo);
+      const r = all.filter((x) => W.pfInRange(x.month)); const X = (x) => W.pfMonthDate(x.month);
       const ser = [{ name: '내 투자 (원금+배당)', color: P.mine, width: 3.5, area: true, values: r.map((x) => ({ x: X(x), y: x.book })) },
         { name: 'KOSPI', color: P.kospi, dash: true, values: r.map((x) => ({ x: X(x), y: x.kospi })) },
         { name: 'S&P500', color: P.sp, dash: true, values: r.map((x) => ({ x: X(x), y: x['sp500' + k] })) },
@@ -1486,11 +1508,11 @@ W.pfDraw = () => {
     } else if (bn.status === 'error') W.pfFail(box);
 
     const ib = document.getElementById('ch-idxline'); const ix = dash.data('idx');
-    if (ix.status === 'ok') {
+    if (ix.status === 'ok' && !ix.data.some((x) => x.month >= W.pfPrevMonth(W.pfFrom()) && x.month <= W.pfTo())) { ib.classList.remove('dash-skeleton'); ib.replaceChildren(); const e = document.createElement('div'); e.className = 'pf-fail'; e.textContent = '선택한 기간에 지수 데이터가 없습니다.'; ib.append(e); }
+    else if (ix.status === 'ok') {
       ib.classList.remove('dash-skeleton');
-      const last = ix.data[ix.data.length - 1]; const p = dash.params().range || '전체';
-      const st = p === '전체' ? '2023-12' : (() => { const n = { '1년': 12, '3년': 36, '5년': 60 }[p]; return new Date(Date.UTC(Number(last.month.slice(0, 4)), Number(last.month.slice(5)) - 1 - n, 1)).toISOString().slice(0, 7); })();
-      const r = ix.data.filter((x) => x.month >= st); const b0 = r[0];
+      const st = W.pfPrevMonth(W.pfFrom());
+      const r = ix.data.filter((x) => x.month >= st && x.month <= W.pfTo()); const b0 = r[0];
       const f = { kospi: (x) => x.kospi, sp: (x) => x.sp500 * (k ? x.usdkrw : 1), nq: (x) => x.nasdaq * (k ? x.usdkrw : 1), fx: (x) => x.usdkrw };
       const mk = (name, color, fn) => ({ name, color, values: r.map((x) => ({ x: W.pfMonthDate(x.month), y: fn(x) / fn(b0) - 1 })) });
       const ser = [mk('KOSPI', P.kospi, f.kospi), mk('NASDAQ', P.nq, f.nq), mk('S&P500', P.sp, f.sp), mk('달러', P.fx, f.fx)].map((x) => ({ ...x, dash: true }));
@@ -1506,7 +1528,7 @@ W.pfDraw = () => {
           const l = document.createElement('div'); l.className = 'lb'; l.textContent = x.name; const v = document.createElement('div'); v.className = 'v'; v.style.color = x.color;
           v.textContent = lv ? W.pfPct(lv.y) : '—'; d.append(l, v); return d; }));
       }
-      document.getElementById('h-idxline').textContent = `주요지수 수익률 비교 (${p === '전체' ? '투자 시작 이후' : '최근 ' + p})`;
+      document.getElementById('h-idxline').textContent = `주요지수 수익률 비교 (${W.pfRangeLabel()})`;
       document.getElementById('nt-idxline').textContent = `${st.replace('-', '.')} 월말을 0%로 맞춘 누적 수익률. ${k ? '미국 지수는 원화 환산.' : '미국 지수는 달러 기준.'}`;
       W.pfLegend(document.getElementById('lg-idxline'), ser); W.pfLine(ib, ser, { fmt: (v) => W.pfPct(v), tipFmt: (v) => W.pfPct(v), zero: false });
     } else if (ix.status === 'error') W.pfFail(ib);
