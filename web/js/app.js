@@ -63,7 +63,8 @@
       mk.onclick = async () => { mk.disabled = true; try { await api.call({ action: 'market_refresh' }); await api.load(true); msg.textContent = '시세를 새로 받았습니다.'; } catch (e) { msg.textContent = e.message; } mk.disabled = false; };
       const clr = h('button', 'app-ghost', '저장된 데이터 지우기');
       clr.onclick = () => { api.clear(); msg.textContent = '이 폰에 저장된 캐시를 지웠습니다.'; };
-      box.append(mk, clr, h('p', 'app-msg', '앱 버전 ' + (window.PF_BUILD || '')));
+      if (window.pfLock) box.append(h('h3', null, '앱 잠금'), ...window.pfLock.settingsItems());
+      box.append(h('h3', null, '데이터'), mk, clr, h('p', 'app-msg', '앱 버전 ' + (window.PF_BUILD || '')));
     }
   }
 
@@ -214,8 +215,8 @@
     document.body.prepend(bar);
     wireWatchLink();
     wireHoldButton();
-    api.boot();
     if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('sw.js'); } catch (e) { /* noop */ } }
-    if (!api.cfg().url || !api.cfg().key) openSettings(true);
+    const go = () => { api.boot(); if (!api.cfg().url || !api.cfg().key) openSettings(true); };
+    if (window.pfLock) window.pfLock.start().then(go); else go(); // 잠금(비밀번호) 해제 뒤에 데이터를 연다
   });
 })();

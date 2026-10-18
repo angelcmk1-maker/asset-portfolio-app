@@ -75,6 +75,24 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
 .app-hold{font:inherit;text-align:left;background:var(--color-bg);color:var(--color-fg);cursor:pointer;width:100%}
 .app-chev{color:var(--color-fg-muted);font-size:20px}
 .app-sheet [hidden]{display:none}
+.lk{position:fixed;inset:0;z-index:1000;background:var(--color-bg);display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px)}
+.lk-box{width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.lk-box.shake{animation:lkshake .35s}
+@keyframes lkshake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.lk-icon{font-size:30px;width:60px;height:60px;border-radius:18px;display:flex;align-items:center;justify-content:center;background:var(--color-panel);border:1px solid var(--color-border-line)}
+.lk-title{font-size:20px;margin:6px 0 0}
+.lk-sub{font-size:13px;color:var(--color-fg-muted);margin:0;line-height:1.5;min-height:2.6em}
+.lk-dots{display:flex;gap:12px;min-height:16px;margin:6px 0}
+.lk-dots i{width:13px;height:13px;border-radius:50%;border:2px solid var(--color-fg-muted)}
+.lk-dots i.on{background:var(--color-fg);border-color:var(--color-fg)}
+.lk-msg{font-size:12px;color:var(--color-bad);margin:0;min-height:1.4em}
+.lk-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;margin-top:6px}
+.lk-k{font:inherit;font-size:24px;height:62px;border-radius:16px;border:1px solid var(--color-border-line);background:var(--color-panel);color:var(--color-fg);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.lk-k:active{background:var(--color-border-line)}
+.lk-fn{font-size:15px;color:var(--color-fg-muted)}
+.lk-ok{font-size:16px;font-weight:600;background:var(--color-fg);color:var(--color-bg);border-color:var(--color-fg)}
+.lk-ok:disabled{opacity:.35}
+.lk-link{font:inherit;font-size:12px;color:var(--color-fg-muted);background:none;border:0;text-decoration:underline;margin-top:10px;cursor:pointer;line-height:1.5}
 """
 
 html = f"""<!doctype html>
@@ -89,6 +107,7 @@ html = f"""<!doctype html>
 <script>window.PF_BUILD = "{build}";</script>
 <script src="vendor/d3.min.js"></script>
 <script src="js/shim.js?v={build}"></script>
+<script src="js/lock.js?v={build}"></script>
 <script src="js/app.js?v={build}"></script>
 </head>
 <body>
