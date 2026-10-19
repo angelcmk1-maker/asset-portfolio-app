@@ -137,5 +137,20 @@
       ccy: r[4] || 'KRW', qty: num(r[5]), avg: num(r[6]), price: num(r[9]) != null ? num(r[9]) : num(r[7]), manual: num(r[8]), cls: String(r[18] || '').trim() }))
       .filter((x) => String(x.name).trim() !== '');
   }
-  window.pfApi = { holdRows, load, call, boot, cfg, store, state, ingest, setConfig(url, key) { store.set('pf_api_url', url.trim()); store.set('pf_api_key', key.trim()); }, clear() { store.del('pf_cache'); } };
+  // 데이터 상태(설정 화면 진단용): 데이터셋별 줄 수·기간·오류
+  function diag() {
+    const out = [];
+    const ids = [...new Set([...MARKET_IDS, 'holdings', 'balances', 'acct_meta', 'flows', 'dividends', 'accounts', 'idx', 'sim_base', 'sim_path'])];
+    for (const id of ids) {
+      if (ERR[id]) { out.push({ id, ok: false, text: ERR[id] }); continue; }
+      const d = DATA[id]; if (!Array.isArray(d)) { out.push({ id, ok: false, text: '없음' }); continue; }
+      const ms = d.map((r) => r.month || r.date).filter(Boolean).sort();
+      let text = `${d.length}줄` + (ms.length ? ` · ${ms[0]}~${ms[ms.length - 1]}` : '');
+      if (id === 'sim_base' && d[0]) text += ` · 수익률 ${d[0].ret && d[0].ret.months ? d[0].ret.months.length : '?'}개월 · 현재 ${Math.round(d[0].value / 1e4).toLocaleString()}만`;
+      if (id === 'sim_path') { const bad = d.filter((r) => !isFinite(r.p50)).length; if (bad) text += ` · 계산 불가 ${bad}줄`; }
+      out.push({ id, ok: true, text });
+    }
+    return out;
+  }
+  window.pfApi = { diag, holdRows, load, call, boot, cfg, store, state, ingest, setConfig(url, key) { store.set('pf_api_url', url.trim()); store.set('pf_api_key', key.trim()); }, clear() { store.del('pf_cache'); } };
 })();

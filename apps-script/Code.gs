@@ -100,12 +100,15 @@ function all_() {
 
 // ---------- 시세 (Yahoo 월봉) ----------
 function yahoo_(sym, range, interval) {
-  const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(sym) + '?range=' + range + '&interval=' + interval;
+  // range=max 는 지수에 따라 분기 단위로 내려오는 경우가 있어, 2000-01-01부터 지금까지를 월 단위로 명시해서 받는다
+  const p1 = Math.floor(Date.UTC(2000, 0, 1) / 1000), p2 = Math.floor(Date.now() / 1000) + 86400;
+  const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(sym) + '?period1=' + p1 + '&period2=' + p2 + '&interval=' + interval;
   const res = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' } });
   if (res.getResponseCode() !== 200) throw new Error(sym + ' HTTP ' + res.getResponseCode());
   const r = JSON.parse(res.getContentText()).chart.result[0];
   const ts = r.timestamp || []; const c = (r.indicators.quote[0] || {}).close || [];
-  return ts.map((t, i) => ({ Date: new Date(t * 1000).toISOString(), Close: c[i] })).filter((x) => x.Close != null);
+  return ts.map((t, i) => ({ Date: new Date(t * 1000).toISOString(), Close: c[i] == null ? null : Math.round(c[i] * 10000) / 10000 }))
+    .filter((x) => x.Close != null && x.Close > 0);
 }
 
 function cacheSheet_() {

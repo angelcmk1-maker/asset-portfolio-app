@@ -64,7 +64,9 @@
       const clr = h('button', 'app-ghost', '저장된 데이터 지우기');
       clr.onclick = () => { api.clear(); msg.textContent = '이 폰에 저장된 캐시를 지웠습니다.'; };
       if (window.pfLock) box.append(h('h3', null, '앱 잠금'), ...window.pfLock.settingsItems());
-      box.append(h('h3', null, '데이터'), mk, clr, h('p', 'app-msg', '앱 버전 ' + (window.PF_BUILD || '')));
+      const dg = h('button', 'app-ghost', '데이터 상태 보기');
+      dg.onclick = () => { const pre = h('div', 'app-diag'); for (const x of api.diag()) { const r = h('div', x.ok ? '' : 'bad'); r.append(h('b', null, x.id), h('span', null, ' ' + x.text)); pre.append(r); } dg.replaceWith(pre); };
+      box.append(h('h3', null, '데이터'), mk, clr, dg, h('p', 'app-msg', '앱 버전 ' + (window.PF_BUILD || '')));
     }
   }
 

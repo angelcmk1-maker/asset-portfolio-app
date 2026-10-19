@@ -75,6 +75,8 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
 .app-hold{font:inherit;text-align:left;background:var(--color-bg);color:var(--color-fg);cursor:pointer;width:100%}
 .app-chev{color:var(--color-fg-muted);font-size:20px}
 .app-sheet [hidden]{display:none}
+.app-diag{font-size:11px;line-height:1.6;background:var(--color-bg);border:1px solid var(--color-border-line);border-radius:10px;padding:8px 10px;word-break:break-all}
+.app-diag b{font-weight:600}.app-diag .bad{color:var(--color-bad)}
 .lk{position:fixed;inset:0;z-index:1000;background:var(--color-bg);display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px)}
 .lk-box{width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
 .lk-box.shake{animation:lkshake .35s}
