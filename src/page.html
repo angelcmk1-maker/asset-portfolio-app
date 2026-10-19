@@ -12,6 +12,8 @@
 .pf-ib i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
 .pf-idxsel{padding:var(--cds-pad-md) var(--cds-pad-lg)}
 .pf-num{min-width:0;width:6.5em}
+.pf-tsub{display:none;font-size:11px;color:var(--color-fg-muted);margin-top:2px}
+@media (max-width:560px){#tb-sim-stress th:nth-child(2),#tb-sim-stress td:nth-child(2),#tb-sim-mix th:nth-child(5),#tb-sim-mix td:nth-child(5){display:none}.pf-tsub{display:block}#tb-sim-stress td,#tb-sim-mix td,#tb-sim-stress th,#tb-sim-mix th{padding:6px 5px}}
 .pf-tilde{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
 .pf-rg-msg{font-size:var(--cds-font-size-caption);color:var(--color-bad)}
 .pf-btn[aria-pressed=true]{background:var(--color-fg);color:var(--color-bg);border-color:var(--color-fg)}
@@ -1133,7 +1135,7 @@ W.pfLine = (box, series, o = {}) => {
   const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${width} ${height}`).style('display', 'block');
   const yt = y0.ticks(5); const tmp = svg.append('g').attr('font-size', 11);
   const ml = Math.ceil(d3.max(yt, (t) => { const n = tmp.append('text').text(fmt(t)).node(); const w = n.getComputedTextLength(); return w; })) + 10; tmp.remove();
-  const mr = o.endLabels ? 8 : 8;
+  const mr = o.endLabels ? 8 : 18;
   x.range([ml, width - mr]);
   const g = svg.append('g');
   g.selectAll('line.gr').data(yt).join('line').attr('x1', ml).attr('x2', width - mr).attr('y1', (t) => y0(t)).attr('y2', (t) => y0(t)).attr('stroke', 'var(--cds-chart-grid)').attr('stroke-dasharray', '3 4');
@@ -1658,7 +1660,7 @@ W.pfDrawSim = () => {
     yi.value = String(gy);
   }
   document.getElementById('sim-goal-reset').setAttribute('aria-pressed', String(goal === W.pfGoalDefault && gy === W.pfYearDefault));
-  put('lb-sim-prob', `${gShort} 원 목표 달성 확률`); put('lb-sim-div', `${gy}년 1월 예상 월 배당`);
+  put('lb-sim-prob', `${gShort} 원 목표 달성 확률`); put('lb-sim-div', `${gy}년 1월 예상 월 배당(현재 배당률 유지 시)`);
   let kEnd = base ? base.labels.indexOf(endM) : -1; if (base && kEnd < 0) kEnd = base.labels.length - 1;
   if (base) document.getElementById('btn-sim-avg').textContent = `최근 평균 ${W.pfShort(base.avg_contrib)}`;
   if (sb.status === 'error') ['s-end', 's-prob', 's-when', 's-div', 's-need'].forEach((id) => W.pfFail(document.getElementById(id)));
@@ -1672,9 +1674,10 @@ W.pfDrawSim = () => {
       put('s-prob', `${Math.round(s.goal_prob * 100)}%`);
       put('s-prob-sub', `500개 경로 중 ${ym(s.end_month)}에 ${gShort} 원 이상인 비율 · 현재 ${W.pfShort(s.value_now)}`);
       put('s-when', s.goal_month_p50 ? ym(s.goal_month_p50) : `${W.pfYearMax}년까지 미도달`);
-      put('s-when-sub', `중앙값 기준(연초 단위) · 보수적(하위 10%) ${s.goal_month_p10 ? ym(s.goal_month_p10) : `${W.pfYearMax}년까지 미도달`} · 목표 연도와 상관없이 ${W.pfYearMax}년까지 탐색`);
+      put('s-when-sub', `중앙값 기준(연초 단위) · 보수적(하위 10%) ${s.goal_month_p10 ? ym(s.goal_month_p10) : `${W.pfYearMax}년까지 미도달`}`);
       put('s-div', W.pfWon(s.div_month));
-      put('s-div-sub', `중앙값 자산 × 최근 12개월 배당수익률 연 ${(s.div_yield_y * 100).toFixed(1)}%`);
+      const fw = base.ret && base.ret.f ? base.ret.f : null; const idxY = fw ? fw.kospi * 0.02 + fw.sp500 * 0.015 + fw.nasdaq * 0.008 : null;
+      put('s-div-sub', `지금 배당률(연 ${(s.div_yield_y * 100).toFixed(1)}%, 우리사주·고배당 ETF 포함)이 유지될 때${idxY != null ? ` · 지수 평균 배당률(연 ${(idxY / (fw ? 1 - fw.save : 1) * 100).toFixed(1)}%)이면 월 ${W.pfShort(Math.round(s.end_p50 * idxY / 12))}` : ''}`);
       put('s-need', s.need50 > 0 ? W.pfWon(s.need50) : '추가 납입 없이 도달');
       put('s-need-sub', s.need80 > 0 ? `확률 50% 기준 · 80%로 높이려면 ${W.pfShort(s.need80)}` : '확률 80% 기준으로도 추가 납입 불필요');
       document.getElementById('nt-sim').textContent = `${s.sample} 월간 수익률(미국 지수는 원/달러 변동 포함)을 무작위로 다시 뽑아 만든 500가지 미래 경로로 ${ym(s.end_month)}(목표 시점)까지의 자산 범위를 추정합니다(목표는 위에서 바꿀 수 있음). 매달 같은 비중으로 재조정하고 지수 배당은 재투자한다고 가정했습니다. 과거 흐름에 기댄 추정이며 미래 수익을 보장하지 않습니다.`;
@@ -1702,8 +1705,9 @@ W.pfDrawSim = () => {
   if (st.status === 'ok') {
     tb.replaceChildren(...st.data.filter((x) => x.combo === combo && x.basis === basis).map((x) => {
       const tr = document.createElement('tr'); tr.dataset.key = x.key;
-      const cells = [[x.scenario, 1], [x.period, 1], [W.pfPct(x.drop), 0, x.drop], [W.pfWon(x.loss), 0, x.loss], [x.recover_months ? `${x.recover_months}개월` : '미회복']];
+      const cells = [[x.scenario, 1], [x.period, 1], [W.pfPct(x.drop), 0, x.drop], [W.pfShort(x.loss), 0, x.loss], [x.recover_months ? `${x.recover_months}개월` : '미회복']];
       for (const [v, l, sg] of cells) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; if (sg != null) W.pfSign(td, sg); tr.append(td); }
+      const sub = document.createElement('div'); sub.className = 'pf-tsub'; sub.textContent = x.period; tr.firstChild.append(sub);
       return tr;
     }));
   }
@@ -1712,7 +1716,7 @@ W.pfDrawSim = () => {
   if (mx.status === 'ok') {
     tm.replaceChildren(...mx.data.filter((x) => x.combo === combo && x.value > 0).map((x) => {
       const tr = document.createElement('tr'); tr.dataset.key = x.key;
-      const cells = [[x.cls, 1], [W.pfWon(x.value)], [W.pfPct(x.weight, false)], [W.pfPct(x.cagr)], [x.vol ? W.pfPct(x.vol, false) : '—']];
+      const cells = [[x.cls, 1], [W.pfShort(x.value)], [W.pfPct(x.weight, false)], [W.pfPct(x.cagr)], [x.vol ? W.pfPct(x.vol, false) : '—']];
       for (const [v, l] of cells) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; tr.append(td); }
       return tr;
     }));
