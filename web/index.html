@@ -81,11 +81,11 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
 .lk-ok:disabled{opacity:.35}
 .lk-link{font:inherit;font-size:12px;color:var(--color-fg-muted);background:none;border:0;text-decoration:underline;margin-top:10px;cursor:pointer;line-height:1.5}
 </style>
-<script>window.PF_BUILD = "20261021.1349";</script>
+<script>window.PF_BUILD = "20261021.1445";</script>
 <script src="vendor/d3.min.js"></script>
-<script src="js/shim.js?v=20261021.1349"></script>
-<script src="js/lock.js?v=20261021.1349"></script>
-<script src="js/app.js?v=20261021.1349"></script>
+<script src="js/shim.js?v=20261021.1445"></script>
+<script src="js/lock.js?v=20261021.1445"></script>
+<script src="js/app.js?v=20261021.1445"></script>
 </head>
 <body>
 <div id="dash-root">
@@ -553,7 +553,7 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
     </div>
     <div class="pf-card" id="card-sim-path">
       <h2>예상 자산 범위</h2>
-      <p class="pf-note" id="nt-sim-path">연초마다 500개 경로 중 하위 10%·중앙값·상위 10% 자산과 누적 원금. 점선 가로선은 10억 원 목표입니다.</p>
+      <p class="pf-note" id="nt-sim-path">실선은 2024년 1월부터 지금까지 실제, 점선은 앞으로의 예상입니다.</p>
       <div class="pf-legend" id="lg-sim-path"></div>
       <div class="pf-chart dash-skeleton" id="ch-sim-path" data-source="sim_path"></div>
     </div>
@@ -1759,6 +1759,7 @@ const SIMC = { p50: '#22c55e', band: '#3b82f6', prin: '#cbd5e1', goal: '#eab308'
 document.querySelectorAll('[data-sim-basis]').forEach((b) => b.addEventListener('click', () => dash.setParams({ sim_basis: b.dataset.simBasis })));
 document.querySelectorAll('[data-sim-level]').forEach((b) => b.addEventListener('click', () => dash.setParams({ sim_level: b.dataset.simLevel })));
 const ym = (m) => (m ? `${m.slice(0, 4)}년 ${Number(m.slice(5))}월` : '목표 시점 이후');
+const PX0 = (m) => W.pfMonthDate(m);
 const qS = (s, p) => s[Math.min(s.length - 1, Math.max(0, Math.round(p * (s.length - 1))))];
 // 목표 금액(goal)·목표 연도 1월(k번째 연초)·월 납입액(c)으로 요약 계산 — 예전 sim_sum 과 같은 방식
 W.pfSimSum = (r, c, goal, k) => {
@@ -1832,14 +1833,25 @@ W.pfDrawSim = () => {
     const r = sp.data.filter((x) => x.combo === combo && x.basis === basis && x.level === level && x.month <= endM);
     const X = (x) => W.pfMonthDate(x.month);
     const ser = [
-      { name: '상위 10%', color: SIMC.band, dash: true, values: r.map((x) => ({ x: X(x), y: x.p90 })) },
-      { name: '중앙값', color: SIMC.p50, width: 3.5, area: true, values: r.map((x) => ({ x: X(x), y: x.p50 })) },
-      { name: '하위 10%', color: SIMC.band, dash: true, values: r.map((x) => ({ x: X(x), y: x.p10 })) },
-      { name: '누적 원금', color: SIMC.prin, dash: true, values: r.map((x) => ({ x: X(x), y: x.principal })) },
-      { name: `목표 ${gShort}`, color: SIMC.goal, dash: true, width: 1.5, values: r.map((x) => ({ x: X(x), y: goal })) },
+      { name: '상위 10% (예상)', color: SIMC.band, dash: true, width: 1.5, values: r.map((x) => ({ x: X(x), y: x.p90 })) },
+      { name: '중앙값 (예상)', color: SIMC.p50, dash: true, width: 3, values: r.map((x) => ({ x: X(x), y: x.p50 })) },
+      { name: '하위 10% (예상)', color: SIMC.band, dash: true, width: 1.5, values: r.map((x) => ({ x: X(x), y: x.p10 })) },
+      { name: '누적 원금 (예상)', color: SIMC.prin, dash: true, values: r.map((x) => ({ x: X(x), y: x.principal })) },
     ];
-    W.pfLegend(document.getElementById('lg-sim-path'), ser);
-    document.getElementById('nt-sim-path').textContent = `연초마다 500개 경로 중 하위 10%·중앙값·상위 10% 자산과 누적 원금(${gy}년 1월까지). 점선 가로선은 ${gShort} 원 목표입니다.`;
+    // 과거(2024-01 ~ 지금): 가계부 기준 실제 장부 자산과 납입 원금을 실선으로
+    const pd = dash.data('periodic'); const startM = r.length ? r[0].month : null;
+    const past = pd.status === 'ok' && startM ? pd.data.filter((x) => x.combo === combo && x.gran === '월' && x.end_month >= '2024-01' && x.end_month <= startM) : [];
+    if (past.length) {
+      const PX = (x) => W.pfMonthDate(x.end_month);
+      ser.unshift({ name: '장부 자산 (실제)', color: SIMC.p50, width: 3, area: true, values: past.map((x) => ({ x: PX(x), y: x.book })) },
+        { name: '납입 원금 (실제)', color: SIMC.prin, width: 2, values: past.map((x) => ({ x: PX(x), y: x.cum_contrib })) });
+    }
+    if (r.length) ser.push({ name: '현재 평가', color: SIMC.p50, width: 0.01, values: [{ x: X(r[0]), y: r[0].p50 }] });
+    const gv = [...past.map((x) => PX0(x.end_month)), ...r.map(X)];
+    ser.push({ name: `목표 ${gShort}`, color: SIMC.goal, dash: true, width: 1.5, values: gv.length ? [{ x: gv[0], y: goal }, { x: gv[gv.length - 1], y: goal }] : [] });
+    W.pfLegend(document.getElementById('lg-sim-path'), ser.filter((x) => x.name !== '현재 평가'));
+    const gap = past.length && r.length ? r[0].p50 - past[past.length - 1].book : null;
+    document.getElementById('nt-sim-path').textContent = `실선은 2024년 1월부터 지금까지 실제(가계부 장부 자산·납입 원금), 점선은 ${gy}년 1월까지 500개 경로의 예상(연초 기준)입니다.${gap && Math.abs(gap) > 1e6 ? ` 지금 시점에서 실선과 점선 사이 ${W.pfShort(gap)}은 장부에 없는 평가손익(보유종목 시세 반영분)입니다.` : ''} 노란 점선은 ${gShort} 원 목표.`;
     W.pfLine(box, ser, { xfmt: d3.utcFormat('%Y'), tipTitle: (xv) => d3.utcFormat('%Y년 %m월')(xv) });
     if (!r.some((x) => isFinite(x.p50))) { const e = document.createElement('div'); e.className = 'pf-fail'; e.textContent = '예상 자산 경로를 계산하지 못했습니다(지수·환율 시세 확인 필요). 설정 → 데이터 상태 보기에서 확인하세요.'; box.prepend(e); }
   } else if (sp.status === 'error') W.pfFail(box);
