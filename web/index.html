@@ -81,11 +81,11 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
 .lk-ok:disabled{opacity:.35}
 .lk-link{font:inherit;font-size:12px;color:var(--color-fg-muted);background:none;border:0;text-decoration:underline;margin-top:10px;cursor:pointer;line-height:1.5}
 </style>
-<script>window.PF_BUILD = "20261021.1245";</script>
+<script>window.PF_BUILD = "20261021.1254";</script>
 <script src="vendor/d3.min.js"></script>
-<script src="js/shim.js?v=20261021.1245"></script>
-<script src="js/lock.js?v=20261021.1245"></script>
-<script src="js/app.js?v=20261021.1245"></script>
+<script src="js/shim.js?v=20261021.1254"></script>
+<script src="js/lock.js?v=20261021.1254"></script>
+<script src="js/app.js?v=20261021.1254"></script>
 </head>
 <body>
 <div id="dash-root">
@@ -388,12 +388,12 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
     </div>
     <div class="pf-card" id="card-accounts">
       <h2>계좌별 현황</h2>
-      <p class="pf-note" id="nt-accounts">가계부 기준 잔액. 베트남 저축(VND)은 선택한 통화로 표시합니다.</p>
+      <p class="pf-note" id="nt-accounts">가계부 기준. 납입 원금 + 배당 누계 + 이자 누계 = 가계부 잔액(원화 계좌). 베트남 저축(VND)은 선택한 통화로 표시합니다.</p>
       <div class="pf-tbl-wrap">
         <table class="pf-tbl" id="tb-accounts" data-source="accounts_view" data-row-key="account">
           <thead><tr>
             <th data-field="account">계좌</th><th data-field="owner">소유</th><th data-field="group">구분</th><th data-field="start">개설일</th>
-            <th data-field="principal_krw">납입 원금</th><th data-field="dividend_krw">배당</th><th data-field="interest_krw">이자</th>
+            <th data-field="principal_krw">납입 원금</th><th data-field="dividend_all">배당 누계</th><th data-field="interest_all">이자 누계</th>
             <th data-field="balance_show" id="th-bal">잔액</th>
           </tr></thead><tbody></tbody>
         </table>
@@ -497,10 +497,10 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
     </div>
     <div class="pf-card" id="card-risk-items">
       <h2>분류별 구성 자산</h2>
-      <p class="pf-note">분류는 구글 시트에서 바꿉니다: 보유종목 탭 S열(종목별), 계좌목록 탭 F열(종목이 없는 계좌), 기타자산 탭(집 등). 원금은 종목=매입금액, 계좌=납입 원금입니다.</p>
+      <p class="pf-note">분류는 구글 시트에서 바꿉니다: 보유종목 탭 S열(종목별), 계좌목록 탭 F열(종목이 없는 계좌), 기타자산 탭(집 등). 원금 열은 종목이면 매입금액(수량×평균단가), 종목이 없는 계좌면 납입 원금이라, 합계가 다른 표의 투자원금과 다를 수 있습니다.</p>
       <div class="pf-tbl-wrap">
         <table class="pf-tbl" id="tb-risk-items" data-source="risk_items" data-row-key="key">
-          <thead><tr><th data-field="cls">분류</th><th data-field="item">자산</th><th data-field="account">계좌</th><th data-field="value">평가금액</th><th data-field="principal">원금</th><th data-source="risk_items" data-field="basis">기준</th></tr></thead><tbody></tbody>
+          <thead><tr><th data-field="cls">분류</th><th data-field="item">자산</th><th data-field="account">계좌</th><th data-field="value">평가금액</th><th data-field="principal">원금·매입금액</th><th data-source="risk_items" data-field="basis">기준</th></tr></thead><tbody></tbody>
         </table>
       </div>
     </div>
@@ -833,7 +833,7 @@ dash.calc('bal_latest', {
 
 dash.calc('accounts_view', {
   title: '계좌별 잔액',
-  description: '계좌별 원금·배당·이자(2023년 말 잔액은 기초 원금으로 포함, 배당·이자는 2024년 이후)와 가계부 잔액. VND 계좌는 원/달러 ÷ 달러/동 최근 환율로 원화 환산',
+  description: '계좌별 납입 원금(가계부 납입 누계 — 다른 표·홈 원금과 같은 기준), 배당·이자(2024년 이후 / 전체 누계)와 가계부 잔액. VND 계좌는 원/달러 ÷ 달러/동 최근 환율로 원화 환산',
   inputs: ['accounts', 'flows', 'usdkrw', 'usdvnd'],
   fn: (accounts, flows, usdkrw, usdvnd) => {
     const START = '2024-01';
@@ -841,11 +841,13 @@ dash.calc('accounts_view', {
     const vndkrw = last(usdkrw.filter((r) => r.close > 100)) / last(usdvnd.filter((r) => r.close > 1000));
     return accounts.map((a) => {
       const fl = flows.filter((r) => r.account === a.account); const sum = (f) => fl.filter(f).reduce((s, r) => s + Number(r.krw), 0);
-      const principal_krw = sum((r) => r.month < START || r.kind === '납입');
+      // 원금은 어느 표에서나 같은 기준(가계부 '납입' 누계)으로 맞춤. 2023년 이전 배당·이자는 원금이 아니라 배당·이자 누계에 넣음
+      const principal_krw = sum((r) => r.kind === '납입');
       const dividend_krw = sum((r) => r.month >= START && r.kind === '배당'), interest_krw = sum((r) => r.month >= START && r.kind === '이자');
-      return { ...a, principal_krw, dividend_krw, interest_krw, rate_krw: a.ccy === 'VND' ? vndkrw : 1,
+      const dividend_all = sum((r) => r.kind === '배당'), interest_all = sum((r) => r.kind === '이자');
+      return { ...a, principal_krw, dividend_krw, interest_krw, dividend_all, interest_all, rate_krw: a.ccy === 'VND' ? vndkrw : 1,
         balance_krw_now: a.ccy === 'VND' ? a.balance_native * vndkrw : a.balance_native,
-        ledger_krw: principal_krw + dividend_krw + interest_krw };
+        ledger_krw: principal_krw + dividend_all + interest_all };
     });
   },
 });
@@ -1452,7 +1454,7 @@ W.pfDraw = () => {
       add(`${combo.split('+').join('·')} 계좌 장부 자산은 `); add(W.pfWon(s.book_krw), true, 'book_krw'); add('으로, 올해 배당은 '); add(W.pfWon(s.ytd_dividend), true, 'ytd_dividend'); add('입니다.');
     }
     setText('t-principal', W.pfWon(s.principal));
-    setText('t-start', `2024.01 투자 시작(2023년 말 잔액 포함) · 투자·연금 ${W.pfShort(s.principal_inv)}`);
+    setText('t-start', `가계부 납입 누계 · 투자·연금 ${W.pfShort(s.principal_inv)}`);
     setText('t-div', W.pfWon(s.dividend)); setText('t-div-sub', `원금 대비 ${W.pfPct(s.dividend / s.principal, false)}`);
     setText('t-int', W.pfWon(s.interest)); setText('t-ytd', W.pfWon(s.ytd_contrib)); setText('t-ytd-sub', `${s.last_month.slice(0, 4)}년 1월~${Number(s.last_month.slice(5))}월`);
     setText('d-month', W.pfWon(s.month_dividend)); setText('d-month-sub', `${s.last_month.replace('-', '.')} 입금분`);
@@ -1587,10 +1589,10 @@ W.pfDraw = () => {
       tb.replaceChildren(...arows.map((a) => {
         const tr = document.createElement('tr'); tr.dataset.key = a.account;
         const bal = fx === 'krw' ? W.pfWon(a.balance_krw_now) : (a.ccy === 'VND' ? won.format(a.balance_native) + ' ₫' : W.pfWon(a.balance_native));
-        for (const [v, l] of [[a.account, 1], [a.owner, 1], [a.group, 1], [a.start.replace(/-/g, '.'), 1], [W.pfWon(a.principal_krw)], [W.pfWon(a.dividend_krw)], [W.pfWon(a.interest_krw)], [bal]]) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; tr.append(td); }
+        for (const [v, l] of [[a.account, 1], [a.owner, 1], [a.group, 1], [a.start.replace(/-/g, '.'), 1], [W.pfWon(a.principal_krw)], [W.pfWon(a.dividend_all)], [W.pfWon(a.interest_all)], [bal]]) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; tr.append(td); }
         return tr;
       }));
-      W.pfFoot(tb, arows.length ? [[`합계 (${arows.length}개 계좌)`, 1], ['', 1], ['', 1], ['', 1], [W.pfWon(d3.sum(arows, (a) => a.principal_krw))], [W.pfWon(d3.sum(arows, (a) => a.dividend_krw))], [W.pfWon(d3.sum(arows, (a) => a.interest_krw))],
+      W.pfFoot(tb, arows.length ? [[`합계 (${arows.length}개 계좌)`, 1], ['', 1], ['', 1], ['', 1], [W.pfWon(d3.sum(arows, (a) => a.principal_krw))], [W.pfWon(d3.sum(arows, (a) => a.dividend_all))], [W.pfWon(d3.sum(arows, (a) => a.interest_all))],
         [W.pfWon(d3.sum(arows, (a) => a.balance_krw_now)) + (fx === 'krw' ? '' : ' (원화 환산)')]] : null);
     }
   }
