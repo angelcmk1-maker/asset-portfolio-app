@@ -613,7 +613,7 @@ dash.calc('idx', {
 
 dash.calc('periodic', {
   title: '기간별 납입·배당·이자',
-  description: '투자 시작 2024-01 기준. 2023년 말까지의 잔액(원금+배당+이자)은 2024-01 기초 원금으로 넣고, 이후 흐름을 소유자 조합 × 월/분기/연으로 합산해 누계·12개월 평균 배당·원금 대비 배당률을 계산',
+  description: '투자 시작 2024-01 기준. 원금은 가계부 납입 누계(2023년 이전 납입 포함), 2023년 이전 배당·이자는 2024-01 장부 자산에만 더하고(pre_income), 이후 흐름을 소유자 조합 × 월/분기/연으로 합산해 누계·12개월 평균 배당·원금 대비 배당률을 계산',
   inputs: ['flows'],
   fn: (flows) => {
     const START = '2024-01';
@@ -627,25 +627,26 @@ dash.calc('periodic', {
     const key = { '월': (x) => x, '분기': (x) => `${x.slice(0, 4)} Q${Math.ceil(Number(x.slice(5)) / 3)}`, '연': (x) => x.slice(0, 4) };
     const out = [];
     for (const c of combos) {
-      const per = new Map(all.map((x) => [x, { c: 0, d: 0, i: 0 }]));
+      const per = new Map(all.map((x) => [x, { c: 0, d: 0, i: 0, o: 0 }]));
       for (const r of flows) {
         if (!c.includes(r.owner)) continue;
         const pre = r.month < START; const p = per.get(pre ? START : r.month); const v = Number(r.krw);
-        if (pre || r.kind === '납입') p.c += v; else if (r.kind === '배당') p.d += v; else p.i += v;
+        // 원금은 가계부 '납입'만(다른 표와 같은 기준). 2023년 이전 배당·이자는 2024-01 장부 자산에만 더함(o)
+        if (r.kind === '납입') p.c += v; else if (pre) p.o += v; else if (r.kind === '배당') p.d += v; else p.i += v;
       }
       for (const g of ['월', '분기', '연']) {
         const agg = new Map();
         for (const x of all) {
-          const k = key[g](x); const a = agg.get(k) || { c: 0, d: 0, i: 0, end: x }; const p = per.get(x);
-          a.c += p.c; a.d += p.d; a.i += p.i; a.end = x; agg.set(k, a);
+          const k = key[g](x); const a = agg.get(k) || { c: 0, d: 0, i: 0, o: 0, end: x }; const p = per.get(x);
+          a.c += p.c; a.d += p.d; a.i += p.i; a.o += p.o; a.end = x; agg.set(k, a);
         }
-        let cc = 0, cd = 0, ci = 0; const divs = []; let started = false;
+        let cc = 0, cd = 0, ci = 0, co = 0; const divs = []; let started = false;
         for (const [period, a] of agg) {
-          if (!started && !a.c && !a.d && !a.i) continue; started = true;
-          cc += a.c; cd += a.d; ci += a.i; divs.push(a.d);
+          if (!started && !a.c && !a.d && !a.i && !a.o) continue; started = true;
+          cc += a.c; cd += a.d; ci += a.i; co += a.o; divs.push(a.d);
           const last12 = divs.slice(-12);
           out.push({ combo: c.join('+'), gran: g, period, end_month: a.end, contrib: a.c, dividend: a.d, interest: a.i,
-            cum_contrib: cc, cum_dividend: cd, cum_interest: ci, book: cc + cd + ci,
+            cum_contrib: cc, cum_dividend: cd, cum_interest: ci, pre_income: co, book: cc + cd + ci + co,
             div_avg12: g === '월' ? last12.reduce((s, v) => s + v, 0) / 12 : null,
             div_yield: cc > 0 ? a.d / cc : null });
         }
@@ -665,12 +666,13 @@ dash.calc('bench', {
     const out = [];
     for (let b = 1; b < 8; b++) {
       const c = owners.filter((_, i) => b & (1 << i));
-      const net = new Map(); const div = new Map();
+      const net = new Map(); const div = new Map(); const pin = new Map();
       for (const r of flows) {
         if (!c.includes(r.owner) || (r.group !== '투자' && r.group !== '연금')) continue;
         const pre = r.month < START; const mk = pre ? START : r.month;
         const map = pre || r.kind === '납입' ? net : div;
         map.set(mk, (map.get(mk) || 0) + Number(r.krw));
+        if (r.kind === '납입') pin.set(mk, (pin.get(mk) || 0) + Number(r.krw)); // 원금 표시는 납입만
       }
       const first = [...net.keys()].sort()[0];
       const KR = ['kospi', 'kosdaq'], US = ['sp500', 'nasdaq', 'dow', 'sox'];
@@ -678,7 +680,7 @@ dash.calc('bench', {
       let principal = 0, book = 0;
       for (const row of idx) {
         if (row.month < first) continue;
-        const v = net.get(row.month) || 0; principal += v; book += v + (div.get(row.month) || 0);
+        const v = net.get(row.month) || 0; principal += pin.get(row.month) || 0; book += v + (div.get(row.month) || 0);
         const px = {}; for (const k of KR) px[k] = row[k]; for (const k of US) { px[k] = row[k]; px[k + '_fx'] = row[k] == null ? null : row[k] * row.usdkrw; }
         const o = { combo: c.join('+'), month: row.month, principal, book };
         for (const k of keys) { if (px[k] == null) { o[k] = null; continue; } if (v) u[k] += v / px[k]; o[k] = u[k] * px[k]; }
@@ -1450,7 +1452,7 @@ W.pfDraw = () => {
       const ser = [{ name: '납입', color: P.kospi, values: r.map((x) => x.contrib) }, { name: '배당', color: P.mine, values: r.map((x) => x.dividend) }, { name: '이자', color: P.gold, values: r.map((x) => x.interest) }];
       W.pfLegend(document.getElementById('lg-flow'), ser); W.pfBars(box, cats, ser);
       const ser2 = [{ name: '장부 자산', color: P.mine, width: 3, area: true, values: r.map((x) => ({ x: W.pfMonthDate(x.end_month), y: x.book })) },
-        { name: '원금+배당', color: P.kospi, dash: true, values: r.map((x) => ({ x: W.pfMonthDate(x.end_month), y: x.cum_contrib + x.cum_dividend })) },
+        { name: '원금+배당', color: P.kospi, dash: true, values: r.map((x) => ({ x: W.pfMonthDate(x.end_month), y: x.cum_contrib + x.cum_dividend + (x.pre_income || 0) })) },
         { name: '납입 원금', color: P.nq, dash: true, values: r.map((x) => ({ x: W.pfMonthDate(x.end_month), y: x.cum_contrib })) }];
       W.pfLegend(document.getElementById('lg-cum'), ser2);
       W.pfLine(box2, ser2, { tipTitle: (_, i) => r[i] ? r[i].period : '' });
