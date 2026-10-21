@@ -37,9 +37,9 @@
   const MARKET_IDS = ['kospi', 'kosdaq', 'sp500', 'nasdaq', 'dow', 'sox', 'usdkrw', 'usdvnd'];
   const num = (x) => { const t = String(x == null ? '' : x).replace(/[,\s₩$%]/g, ''); return t === '' || isNaN(Number(t)) ? null : Number(t); };
 
-  let RAW = {};
+  let RAW = {}; let RAW_SRC = {};
   function ingest(api) {
-    RAW = api.sheets || {};
+    RAW = api.sheets || {}; RAW_SRC = api.market_src || {};
     for (const k of Object.keys(DATA)) delete DATA[k];
     for (const k of Object.keys(ERR)) delete ERR[k];
     const S = api.sheets || {}; const M = api.market || {};
@@ -112,7 +112,18 @@
     if (state.loading) return;
     state.loading = true; state.error = null; window.pfApp && window.pfApp.status(state); fire();
     try {
-      const j = await call({ action: 'all' });
+      // 지수·환율은 GitHub에서 매일 받아 두는 공개 시세(data/market.json)를 우선 쓰고, 없거나 짧으면 Apps Script 시세를 씀
+      const [j, pm] = await Promise.all([call({ action: 'all' }), fetch('data/market.json', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null)]);
+      const src = {};
+      if (pm && pm.market) {
+        j.market = j.market || {};
+        for (const [id, rows] of Object.entries(pm.market)) {
+          if (Array.isArray(rows) && rows.length >= 24) { j.market[id] = rows; src[id] = 'github'; }
+        }
+        j.market_updated = pm.updated;
+      }
+      for (const id of MARKET_IDS) if (!src[id]) src[id] = j.market && j.market[id] ? 'apps-script' : 'none';
+      j.market_src = src;
       ingest(j); state.updated = j.updated; state.source = 'live';
       try { store.set('pf_cache', JSON.stringify(j)); } catch (e) { /* noop */ }
     } catch (e) {
@@ -145,7 +156,7 @@
       if (ERR[id]) { out.push({ id, ok: false, text: ERR[id] }); continue; }
       const d = DATA[id]; if (!Array.isArray(d)) { out.push({ id, ok: false, text: '없음' }); continue; }
       const ms = d.map((r) => r.month || r.date).filter(Boolean).sort();
-      let text = `${d.length}줄` + (ms.length ? ` · ${ms[0]}~${ms[ms.length - 1]}` : '');
+      let text = `${d.length}줄` + (ms.length ? ` · ${ms[0]}~${ms[ms.length - 1]}` : '') + (RAW_SRC[id] ? ` · ${RAW_SRC[id]}` : '');
       if (id === 'sim_base' && d[0]) text += ` · 수익률 ${d[0].ret && d[0].ret.months ? d[0].ret.months.length : '?'}개월 · 현재 ${Math.round(d[0].value / 1e4).toLocaleString()}만`;
       if (id === 'sim_path') { const bad = d.filter((r) => !isFinite(r.p50)).length; if (bad) text += ` · 계산 불가 ${bad}줄`; }
       out.push({ id, ok: true, text });
