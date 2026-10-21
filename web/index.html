@@ -81,11 +81,11 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
 .lk-ok:disabled{opacity:.35}
 .lk-link{font:inherit;font-size:12px;color:var(--color-fg-muted);background:none;border:0;text-decoration:underline;margin-top:10px;cursor:pointer;line-height:1.5}
 </style>
-<script>window.PF_BUILD = "20261019.1138";</script>
+<script>window.PF_BUILD = "20261021.1240";</script>
 <script src="vendor/d3.min.js"></script>
-<script src="js/shim.js?v=20261019.1138"></script>
-<script src="js/lock.js?v=20261019.1138"></script>
-<script src="js/app.js?v=20261019.1138"></script>
+<script src="js/shim.js?v=20261021.1240"></script>
+<script src="js/lock.js?v=20261021.1240"></script>
+<script src="js/app.js?v=20261021.1240"></script>
 </head>
 <body>
 <div id="dash-root">
@@ -105,6 +105,8 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
 .pf-num{min-width:0;width:6.5em}
 .pf-tsub{display:none;font-size:11px;color:var(--color-fg-muted);margin-top:2px}
 @media (max-width:560px){#tb-sim-stress th:nth-child(2),#tb-sim-stress td:nth-child(2),#tb-sim-mix th:nth-child(5),#tb-sim-mix td:nth-child(5){display:none}.pf-tsub{display:block}#tb-sim-stress td,#tb-sim-mix td,#tb-sim-stress th,#tb-sim-mix th{padding:6px 5px}}
+#tb-items td:first-child{white-space:normal;min-width:9em}
+@media (max-width:560px){#tb-items th:nth-child(4),#tb-items td:nth-child(4),#tb-items th:nth-child(5),#tb-items td:nth-child(5){display:none}#tb-items td,#tb-items th{padding:6px 5px}}
 .pf-tilde{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
 .pf-rg-msg{font-size:var(--cds-font-size-caption);color:var(--color-bad)}
 .pf-btn[aria-pressed=true]{background:var(--color-fg);color:var(--color-bg);border-color:var(--color-fg)}
@@ -429,11 +431,11 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
       </div>
     </div>
     <div class="pf-card" id="card-items">
-      <h2>종목별 배당 순위</h2>
-      <p class="pf-note">가계부 메모의 종목명으로 묶었습니다. 메모에 종목명이 없는 입금은 '종목 미표기'로 남겼습니다.</p>
+      <h2 id="h-items">종목별 배당 순위</h2>
+      <p class="pf-note" id="nt-items">가계부 메모의 종목명으로 묶었습니다. 메모에 종목명이 없는 입금은 '종목 미표기'로 남겼습니다.</p>
       <div class="pf-tbl-wrap">
-        <table class="pf-tbl" id="tb-items" data-source="div_items" data-row-key="combo,item">
-          <thead><tr><th data-field="item">종목</th><th data-field="ytd">올해</th><th data-field="total">누적</th><th data-field="count">횟수</th><th data-field="last_date">최근 입금</th></tr></thead><tbody></tbody>
+        <table class="pf-tbl" id="tb-items" data-source="dividends" data-row-key="item">
+          <thead><tr><th data-field="item">종목</th><th data-field="total">기간 합계</th><th data-field="share">비중</th><th data-field="count">횟수</th><th data-field="last_date">최근 입금</th></tr></thead><tbody></tbody>
         </table>
       </div>
     </div>
@@ -1596,14 +1598,26 @@ W.pfDraw = () => {
         return tr;
       }));
     } else if (per.status === 'error') { W.pfFail(box); W.pfFail(box2); }
-    const di = dash.data('div_items'); const tb = document.querySelector('#tb-items tbody');
+    // 종목별 배당 순위: 보기 설정의 기간(시작~끝 월)과 선택한 소유자에 맞춰 배당 입금 건을 합산
+    const di = dash.data('dividends'); const tb = document.querySelector('#tb-items tbody');
     if (di.status === 'ok') {
-      tb.replaceChildren(...di.data.filter((x) => x.combo === combo).map((x) => {
-        const tr = document.createElement('tr'); tr.dataset.key = [x.combo, x.item].map(enc).join(',');
-        for (const [v, l] of [[x.item, 1], [W.pfWon(x.ytd)], [W.pfWon(x.total)], [won.format(x.count) + '회'], [x.last_date.replace(/-/g, '.')]]) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; tr.append(td); }
+      const owners = combo.split('+'); const m = new Map(); let sum = 0;
+      for (const r of di.data) {
+        const mo = r.month || String(r.date).slice(0, 7);
+        if (!owners.includes(r.owner) || !W.pfInRange(mo)) continue;
+        const v = Number(r.krw) || 0; const a = m.get(r.item) || { item: r.item, total: 0, count: 0, last_date: '' };
+        a.total += v; a.count += 1; if (r.date > a.last_date) a.last_date = r.date; m.set(r.item, a); sum += v;
+      }
+      const rows = [...m.values()].sort((x, y) => y.total - x.total);
+      document.getElementById('h-items').textContent = `종목별 배당 순위 (${W.pfRangeLabel()})`;
+      document.getElementById('nt-items').textContent = `보기 설정의 기간·소유자 기준 ${rows.length}개 종목, 합계 ${W.pfWon(Math.round(sum))}. 가계부 메모의 종목명으로 묶었고, 종목명이 없는 입금은 '기타 배당' 등으로 남겼습니다.`;
+      if (!rows.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 5; td.className = 'l'; td.textContent = '선택한 기간에 배당 입금이 없습니다.'; tr.append(td); tb.replaceChildren(tr); }
+      else tb.replaceChildren(...rows.map((x, i) => {
+        const tr = document.createElement('tr'); tr.dataset.key = enc(x.item);
+        for (const [v, l] of [[`${i + 1}. ${x.item}`, 1], [W.pfShort(Math.round(x.total))], [W.pfPct(sum ? x.total / sum : null, false)], [won.format(x.count) + '회'], [x.last_date.replace(/-/g, '.')]]) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; tr.append(td); }
         return tr;
       }));
-    }
+    } else if (di.status === 'error') W.pfFail(tb);
   }
 
   // 지수 비교
