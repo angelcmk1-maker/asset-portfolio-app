@@ -217,7 +217,7 @@
     document.body.prepend(bar);
     wireWatchLink();
     wireHoldButton();
-    if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('sw.js'); } catch (e) { /* noop */ } }
+    if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((r) => r.update()).catch(() => {}); } catch (e) { /* noop */ } }
     const go = () => { api.boot(); if (!api.cfg().url || !api.cfg().key) openSettings(true); };
     if (window.pfLock) window.pfLock.start().then(go); else go(); // 잠금(비밀번호) 해제 뒤에 데이터를 연다
   });

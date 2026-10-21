@@ -81,11 +81,11 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
 .lk-ok:disabled{opacity:.35}
 .lk-link{font:inherit;font-size:12px;color:var(--color-fg-muted);background:none;border:0;text-decoration:underline;margin-top:10px;cursor:pointer;line-height:1.5}
 </style>
-<script>window.PF_BUILD = "20261021.1259";</script>
+<script>window.PF_BUILD = "20261021.1312";</script>
 <script src="vendor/d3.min.js"></script>
-<script src="js/shim.js?v=20261021.1259"></script>
-<script src="js/lock.js?v=20261021.1259"></script>
-<script src="js/app.js?v=20261021.1259"></script>
+<script src="js/shim.js?v=20261021.1312"></script>
+<script src="js/lock.js?v=20261021.1312"></script>
+<script src="js/app.js?v=20261021.1312"></script>
 </head>
 <body>
 <div id="dash-root">
@@ -108,6 +108,7 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
 #tb-items td:first-child{white-space:normal;min-width:9em}
 @media (max-width:560px){#tb-items th:nth-child(4),#tb-items td:nth-child(4),#tb-items th:nth-child(5),#tb-items td:nth-child(5){display:none}#tb-items td,#tb-items th{padding:6px 5px}}
 .pf-tbl tfoot td{position:sticky;bottom:0;background:var(--color-panel);font-weight:700;border-top:2px solid var(--color-fg-muted);border-bottom:0}
+@media (max-width:560px){#tb-accounts td:first-child,#tb-acct-eval td:first-child,#tb-bal td:first-child{white-space:normal;min-width:7.5em}#tb-accounts td,#tb-accounts th{padding:6px 4px;font-size:11px}#tb-accounts td:first-child{min-width:6.5em}}
 .pf-tilde{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
 .pf-rg-msg{font-size:var(--cds-font-size-caption);color:var(--color-bad)}
 .pf-btn[aria-pressed=true]{background:var(--color-fg);color:var(--color-bg);border-color:var(--color-fg)}
@@ -177,7 +178,7 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
   .pf-cmp{grid-template-columns:1fr 1fr}
   .pf-cmp>div:first-child{grid-column:1/-1}
   .pf-tbl-wrap{max-height:360px}
-  #tb-accounts th:nth-child(3),#tb-accounts td:nth-child(3),#tb-accounts th:nth-child(4),#tb-accounts td:nth-child(4),#tb-accounts th:nth-child(7),#tb-accounts td:nth-child(7),
+  #tb-accounts th:nth-child(2),#tb-accounts td:nth-child(2),#tb-accounts th:nth-child(3),#tb-accounts td:nth-child(3),#tb-accounts th:nth-child(4),#tb-accounts td:nth-child(4),#tb-accounts th:nth-child(7),#tb-accounts td:nth-child(7),
   #tb-items th:nth-child(4),#tb-items td:nth-child(4),#tb-items th:nth-child(5),#tb-items td:nth-child(5),
   #tb-holdings th:nth-child(2),#tb-holdings td:nth-child(2),#tb-holdings th:nth-child(3),#tb-holdings td:nth-child(3),#tb-holdings th:nth-child(5),#tb-holdings td:nth-child(5),#tb-holdings th:nth-child(6),#tb-holdings td:nth-child(6),#tb-bal th:nth-child(2),#tb-bal td:nth-child(2),#tb-acct-eval th:nth-child(4),#tb-acct-eval td:nth-child(4),
   #tb-idxret th:nth-child(5),#tb-idxret td:nth-child(5){display:none}
