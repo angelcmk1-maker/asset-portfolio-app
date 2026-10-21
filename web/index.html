@@ -81,11 +81,11 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
 .lk-ok:disabled{opacity:.35}
 .lk-link{font:inherit;font-size:12px;color:var(--color-fg-muted);background:none;border:0;text-decoration:underline;margin-top:10px;cursor:pointer;line-height:1.5}
 </style>
-<script>window.PF_BUILD = "20261021.1240";</script>
+<script>window.PF_BUILD = "20261021.1245";</script>
 <script src="vendor/d3.min.js"></script>
-<script src="js/shim.js?v=20261021.1240"></script>
-<script src="js/lock.js?v=20261021.1240"></script>
-<script src="js/app.js?v=20261021.1240"></script>
+<script src="js/shim.js?v=20261021.1245"></script>
+<script src="js/lock.js?v=20261021.1245"></script>
+<script src="js/app.js?v=20261021.1245"></script>
 </head>
 <body>
 <div id="dash-root">
@@ -107,6 +107,7 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
 @media (max-width:560px){#tb-sim-stress th:nth-child(2),#tb-sim-stress td:nth-child(2),#tb-sim-mix th:nth-child(5),#tb-sim-mix td:nth-child(5){display:none}.pf-tsub{display:block}#tb-sim-stress td,#tb-sim-mix td,#tb-sim-stress th,#tb-sim-mix th{padding:6px 5px}}
 #tb-items td:first-child{white-space:normal;min-width:9em}
 @media (max-width:560px){#tb-items th:nth-child(4),#tb-items td:nth-child(4),#tb-items th:nth-child(5),#tb-items td:nth-child(5){display:none}#tb-items td,#tb-items th{padding:6px 5px}}
+.pf-tbl tfoot td{position:sticky;bottom:0;background:var(--color-panel);font-weight:700;border-top:2px solid var(--color-fg-muted);border-bottom:0}
 .pf-tilde{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
 .pf-rg-msg{font-size:var(--cds-font-size-caption);color:var(--color-bad)}
 .pf-btn[aria-pressed=true]{background:var(--color-fg);color:var(--color-bg);border-color:var(--color-fg)}
@@ -1186,6 +1187,15 @@ W.pfOwners = ['본인', '이솔', '이서'];
 W.pfCombo = () => { const o = dash.params().owners || W.pfOwners; const c = W.pfOwners.filter((x) => o.includes(x)); return (c.length ? c : W.pfOwners).join('+'); };
 const won = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 });
 W.pfWon = (v) => (v == null || isNaN(v) ? '—' : won.format(Math.round(v)) + '원');
+// 표 아래 합계 행(tfoot). cells: [텍스트, 왼쪽정렬, 부호색 기준값] 배열. cells가 없으면 합계 행을 지움
+W.pfFoot = (tbody, cells) => {
+  const table = tbody && tbody.closest('table'); if (!table) return;
+  let tf = table.querySelector('tfoot'); if (!cells) { if (tf) tf.remove(); return; }
+  if (!tf) { tf = document.createElement('tfoot'); table.append(tf); }
+  const tr = document.createElement('tr'); tr.className = 'pf-total';
+  for (const [v, l, sg] of cells) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v == null ? '' : v; if (sg != null) W.pfSign(td, sg); tr.append(td); }
+  tf.replaceChildren(tr);
+};
 W.pfShort = (v) => {
   if (v == null || isNaN(v)) return '—'; const a = Math.abs(v), s = v < 0 ? '-' : '';
   if (a >= 1e8) return s + (a / 1e8).toFixed(a >= 1e9 ? 1 : 2) + '억';
@@ -1554,6 +1564,8 @@ W.pfDraw = () => {
         for (const [v, l, sg] of [[x.account, 1], [W.pfWon(x.principal)], [W.pfWon(x.value)], [W.pfWon(x.gain), 0, x.gain], [W.pfPct(x.ret), 0, x.ret], [basis, 1]]) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; if (sg != null) W.pfSign(td, sg); tr.append(td); }
         return tr;
       }));
+      { const P0 = d3.sum(rows, (x) => x.principal), V0 = d3.sum(rows, (x) => x.value), G0 = V0 - P0, R0 = P0 > 0 ? V0 / P0 - 1 : null;
+        W.pfFoot(aeTb, rows.length ? [[`합계 (${rows.length}개 계좌)`, 1], [W.pfWon(P0)], [W.pfWon(V0)], [W.pfWon(G0), 0, G0], [W.pfPct(R0), 0, R0], ['', 1]] : null); }
     } else if (ae.status === 'error') W.pfFail(aeBox);
     const bl = dash.data('bal_latest'); const tbb = document.querySelector('#tb-bal tbody');
     if (bl.status === 'ok') {
@@ -1564,17 +1576,22 @@ W.pfDraw = () => {
         return tr;
       }));
       if (!rows.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 6; td.className = 'l'; td.textContent = '선택한 계좌에 입력된 월말 잔고가 없습니다.'; tr.append(td); tbb.replaceChildren(tr); }
+      { const B0 = d3.sum(rows, (x) => x.balance_krw), P0 = d3.sum(rows, (x) => x.principal), G0 = B0 - P0, R0 = P0 > 0 ? B0 / P0 - 1 : null;
+        W.pfFoot(tbb, rows.length ? [[`합계 (${rows.length}개 계좌)`, 1], ['', 1], [W.pfWon(B0)], [W.pfWon(P0)], [W.pfWon(G0), 0, G0], [W.pfPct(R0), 0, R0]] : null); }
     }
     const av = dash.data('accounts_view'); const tb = document.querySelector('#tb-accounts tbody');
     document.getElementById('th-bal').textContent = fx === 'krw' ? '잔액(원화)' : '잔액(현지 통화)';
     if (av.status === 'ok') {
       const owners = combo.split('+');
-      tb.replaceChildren(...av.data.filter((a) => owners.includes(a.owner)).map((a) => {
+      const arows = av.data.filter((a) => owners.includes(a.owner));
+      tb.replaceChildren(...arows.map((a) => {
         const tr = document.createElement('tr'); tr.dataset.key = a.account;
         const bal = fx === 'krw' ? W.pfWon(a.balance_krw_now) : (a.ccy === 'VND' ? won.format(a.balance_native) + ' ₫' : W.pfWon(a.balance_native));
         for (const [v, l] of [[a.account, 1], [a.owner, 1], [a.group, 1], [a.start.replace(/-/g, '.'), 1], [W.pfWon(a.principal_krw)], [W.pfWon(a.dividend_krw)], [W.pfWon(a.interest_krw)], [bal]]) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; tr.append(td); }
         return tr;
       }));
+      W.pfFoot(tb, arows.length ? [[`합계 (${arows.length}개 계좌)`, 1], ['', 1], ['', 1], ['', 1], [W.pfWon(d3.sum(arows, (a) => a.principal_krw))], [W.pfWon(d3.sum(arows, (a) => a.dividend_krw))], [W.pfWon(d3.sum(arows, (a) => a.interest_krw))],
+        [W.pfWon(d3.sum(arows, (a) => a.balance_krw_now)) + (fx === 'krw' ? '' : ' (원화 환산)')]] : null);
     }
   }
 
@@ -1611,6 +1628,7 @@ W.pfDraw = () => {
       const rows = [...m.values()].sort((x, y) => y.total - x.total);
       document.getElementById('h-items').textContent = `종목별 배당 순위 (${W.pfRangeLabel()})`;
       document.getElementById('nt-items').textContent = `보기 설정의 기간·소유자 기준 ${rows.length}개 종목, 합계 ${W.pfWon(Math.round(sum))}. 가계부 메모의 종목명으로 묶었고, 종목명이 없는 입금은 '기타 배당' 등으로 남겼습니다.`;
+      W.pfFoot(tb, rows.length ? [[`합계 (${rows.length}개 종목)`, 1], [W.pfShort(Math.round(sum))], ['100%'], [won.format(d3.sum(rows, (x) => x.count)) + '회'], [rows.reduce((m, x) => (x.last_date > m ? x.last_date : m), '').replace(/-/g, '.')]] : null);
       if (!rows.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 5; td.className = 'l'; td.textContent = '선택한 기간에 배당 입금이 없습니다.'; tr.append(td); tb.replaceChildren(tr); }
       else tb.replaceChildren(...rows.map((x, i) => {
         const tr = document.createElement('tr'); tr.dataset.key = enc(x.item);
@@ -1693,6 +1711,8 @@ W.pfDraw = () => {
         for (const [v, l, sg] of cells) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; if (sg != null) W.pfSign(td, sg); tr.append(td); }
         return tr;
       }));
+      { const C0 = d3.sum(h, (x) => x.cost_krw), R0 = C0 > 0 ? total / C0 - 1 : null; const mixed = fx !== 'krw' && h.some((x) => x.ccy !== 'KRW');
+        W.pfFoot(tb, h.length ? [[`합계 (${h.length}개 종목)`, 1], ['', 1], ['', 1], [''], [''], [''], [W.pfWon(total) + (mixed ? ' (원화 환산)' : '')], [W.pfPct(R0), 0, R0], ['100%']] : null); }
       // 트리맵
       tree.querySelectorAll('svg').forEach((n) => n.remove());
       const width = Math.max(280, tree.clientWidth), height = tree.clientWidth < 500 ? 240 : 280;
@@ -1838,6 +1858,7 @@ W.pfDrawSim = () => {
       for (const [v, l] of cells) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; tr.append(td); }
       return tr;
     }));
+    { const mr = mx.data.filter((x) => x.combo === combo && x.value > 0); W.pfFoot(tm, mr.length ? [['합계', 1], [W.pfShort(d3.sum(mr, (x) => x.value))], ['100%'], [''], ['']] : null); }
     const note = document.getElementById('nt-sim-mix');
     if (basis !== 'mix') note.textContent = `지금은 '${{ sp500: 'S&P500', nasdaq: '나스닥', kospi: 'KOSPI' }[basis]}' 기준이라 저축을 뺀 모든 자산을 그 지수에 넣었다고 계산합니다. 아래 표는 '내 자산 구성' 기준의 실제 구성입니다.`;
     else note.textContent = '보유종목 이름으로 자산군을 나눴고(나스닥·테크 → 나스닥, S&P·미국배당 → S&P500, 채권혼합은 절반씩, 그 외 국내), 종목이 없는 투자 계좌는 전체 보유 비중을 따랐습니다. 월말 잔고 중 종목 밖 금액은 현금으로 봤습니다.';
@@ -1966,6 +1987,8 @@ W.pfDrawRisk = () => {
         for (const [v, l] of [[x.item, 1], [x.account, 1], [W.pfWon(x.value)], [W.pfWon(x.principal)], [x.basis, 1]]) tr.append(mk('td', l ? 'l' : null, v));
         return tr;
       }));
+      { const ri = t.data.filter((x) => owners.includes(x.owner));
+        W.pfFoot(tb, ri.length ? [[`합계 (${ri.length}개)`, 1], ['', 1], ['', 1], [W.pfWon(d3.sum(ri, (x) => x.value))], [W.pfWon(d3.sum(ri, (x) => x.principal || 0))], ['', 1]] : null); }
     }
   }
 };
