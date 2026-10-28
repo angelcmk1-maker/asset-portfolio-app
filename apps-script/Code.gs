@@ -7,6 +7,8 @@
  *  3) 배포 → 새 배포 → 유형: 웹 앱 / 실행 사용자: 나 / 액세스 권한: 모든 사용자 → 배포 → 웹 앱 URL 복사
  *  4) 폰 앱을 처음 열 때 웹 앱 URL 과 API 키를 입력
  *
+ *  5) 리포트 자동 보관: 함수 선택에서 setupArchiveTrigger 를 골라 ▶ 실행(한 번만). 매월 1일 새벽에 오래된 리포트를 '리포트_보관' 탭으로 옮깁니다.
+ *
  * 이 스크립트를 고친 뒤에는 배포 → 배포 관리 → 연필(수정) → 버전: 새 버전 → 배포 를 눌러야 반영됩니다(URL은 그대로).
  */
 
@@ -66,6 +68,7 @@ function doGet(e) {
     if (action === 'market_refresh') { refreshMarket(); return json_({ ok: true }); }
     if (action === 'hold_save') return json_(holdSave_(p));
     if (action === 'hold_del') return json_(holdDel_(p));
+    if (action === 'reports_archive') return json_(reportsArchive_(p));
     return json_({ ok: false, error: 'unknown_action' });
   } catch (err) {
     return json_({ ok: false, error: 'server', message: String(err && err.message || err) });
@@ -254,4 +257,74 @@ function watchToggle_(p) {
   const c = sh.getRange(i + 2, 4); const cur = String(c.getValue() || 'Y').toUpperCase();
   c.setValue(cur === 'N' ? 'Y' : 'N');
   return { ok: true, include: cur === 'N' ? 'Y' : 'N' };
+}
+
+// ---------- 리포트 보관 ----------
+// 리포트 탭에는 최근 것만 두고(종목이슈 90일, 경제전망 365일), 그보다 오래된 줄은 '리포트_보관' 탭 아래에 덧붙인다.
+// 지우지 않고 옮기기만 하므로 시트에서 언제든 다시 볼 수 있다. 앱은 '지난 리포트 더 보기'로 보관분을 불러온다.
+const REPORT_SHEET = '리포트', ARCHIVE_SHEET = '리포트_보관';
+const KEEP_DAYS = { '종목이슈': 90, '경제전망': 365 };
+const KEEP_DEFAULT = 365;
+
+function archiveSheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(ARCHIVE_SHEET);
+  if (!sh) {
+    sh = ss.insertSheet(ARCHIVE_SHEET);
+    const head = ss.getSheetByName(REPORT_SHEET).getRange(1, 1, 1, 8).getValues();
+    sh.getRange(1, 1, 1, 8).setValues(head); sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function reportDate_(v) {
+  if (v instanceof Date) return v;
+  const m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+}
+
+/** 오래된 리포트를 보관 탭으로 옮깁니다. 매월 트리거로 돌고, 직접 ▶ 실행해도 됩니다. 옮긴 줄 수를 돌려줍니다. */
+function archiveReports() {
+  const lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(REPORT_SHEET);
+    const last = sh.getLastRow(); if (last < 2) return 0;
+    const rng = sh.getRange(2, 1, last - 1, 8); const rows = rng.getValues();
+    const now = new Date(); const keep = [], move = [];
+    for (const r of rows) {
+      if (r.every((c) => c === '' || c === null)) continue;
+      const d = reportDate_(r[0]); const days = KEEP_DAYS[String(r[1]).trim()] || KEEP_DEFAULT;
+      if (d && (now - d) / 86400000 > days) move.push(r); else keep.push(r);
+    }
+    if (!move.length) return 0;
+    const arc = archiveSheet_(); const ids = new Set();
+    const al = arc.getLastRow();
+    if (al > 1) arc.getRange(2, 8, al - 1, 1).getValues().forEach((x) => ids.add(String(x[0])));
+    const fresh = move.filter((r) => !r[7] || !ids.has(String(r[7]))); // 같은 ID가 이미 보관돼 있으면 다시 넣지 않음
+    if (fresh.length) arc.getRange(arc.getLastRow() + 1, 1, fresh.length, 8).setValues(fresh);
+    // 보관 탭에 들어간 것을 확인한 뒤에 리포트 탭을 다시 씀
+    SpreadsheetApp.flush();
+    rng.clearContent();
+    if (keep.length) sh.getRange(2, 1, keep.length, 8).setValues(keep);
+    Logger.log('보관으로 옮긴 리포트: ' + move.length + '줄, 남은 리포트: ' + keep.length + '줄');
+    return move.length;
+  } finally { lock.releaseLock(); }
+}
+
+/** 처음 한 번 실행: 매월 1일 새벽 4시(베트남)에 archiveReports 가 돌도록 등록합니다. */
+function setupArchiveTrigger() {
+  ScriptApp.getProjectTriggers().filter((t) => t.getHandlerFunction() === 'archiveReports').forEach((t) => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('archiveReports').timeBased().onMonthDay(1).atHour(4).inTimezone(TZ).create();
+  archiveSheet_();
+  Logger.log('매월 1일 04시 리포트 보관 예약 완료. 지금 바로 옮기려면 archiveReports 를 실행하세요.');
+}
+
+/** 앱 '지난 리포트 더 보기': 보관 탭을 최신순으로 offset부터 limit줄씩 돌려줍니다. */
+function reportsArchive_(p) {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ARCHIVE_SHEET);
+  if (!sh || sh.getLastRow() < 2) return { ok: true, rows: [], total: 0 };
+  const rows = trimRows_(sh.getRange(2, 1, sh.getLastRow() - 1, 8).getValues()).filter((r) => r[2]);
+  rows.sort((a, b) => (String(a[0]) < String(b[0]) ? 1 : String(a[0]) > String(b[0]) ? -1 : 0));
+  const off = Math.max(0, Number(p.offset) || 0), lim = Math.min(100, Math.max(1, Number(p.limit) || 30));
+  return { ok: true, rows: rows.slice(off, off + lim), total: rows.length };
 }

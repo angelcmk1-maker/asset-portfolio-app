@@ -133,6 +133,8 @@
 .pf-rep .meta{display:flex;gap:8px;align-items:center;font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
 .pf-rep .tag{padding:1px 8px;border-radius:6px;font-weight:700;background:color-mix(in srgb,#3b82f6 14%,transparent);color:#3b82f6}
 .pf-rep .tag.iss{background:color-mix(in srgb,#22c55e 14%,transparent);color:#16a34a}
+.pf-rep .tag.arc{background:color-mix(in srgb,#64748b 16%,transparent);color:var(--color-fg-muted);font-weight:600}
+.pf-rep-more{display:block;width:100%;margin-top:var(--cds-gap-sm);min-height:44px}
 .pf-rep .ttl{font-weight:700;margin:4px 0 2px;line-height:1.35}
 .pf-rep .sum{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);line-height:1.5;white-space:pre-line}
 .pf-rep .body{margin-top:var(--cds-gap-sm);border-top:1px dashed var(--color-border-line);padding-top:var(--cds-gap-sm);font-size:var(--cds-font-size-body);line-height:1.6;overflow-wrap:anywhere}
@@ -492,7 +494,7 @@
   <section class="pf-page" id="report" hidden>
     <div class="pf-card" id="card-report">
       <h2>경제 전망 · 종목 이슈 리포트</h2>
-      <p class="pf-note" id="nt-report">매주 월요일 07:47 한국·미국 경제 전망, 평일 07:52 보유종목 이슈가 구글 시트 리포트 탭에 자동으로 쌓이고 여기에 표시됩니다. 정보 정리용이며 투자 권유가 아닙니다.</p>
+      <p class="pf-note" id="nt-report">매주 월요일 07:47 한국·미국 경제 전망, 평일 07:52 보유종목 이슈가 구글 시트 리포트 탭에 자동으로 쌓이고 여기에 표시됩니다. 종목 이슈는 90일, 경제 전망은 1년이 지나면 매월 1일 시트의 '리포트_보관' 탭으로 옮겨지며, 앱에서는 맨 아래 '지난 리포트 더 보기'로 볼 수 있습니다. 정보 정리용이며 투자 권유가 아닙니다.</p>
       <div class="pf-grp" id="ctl-report"><span>구분</span>
         <button class="pf-btn" data-rep="전체">전체</button>
         <button class="pf-btn" data-rep="경제전망">경제 전망</button>
@@ -1841,21 +1843,46 @@ W.pfDrawReport = () => {
   if (d.status === 'error') { W.pfFail(box); return; }
   if (d.status !== 'ok') return;
   box.classList.remove('dash-skeleton');
-  const rows = d.data.filter((r) => type === '전체' || r.type === type).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-  if (!rows.length) { box.replaceChildren(el('div', 'pf-rep-empty', d.data.length ? '이 구분의 리포트가 아직 없습니다.' : '아직 리포트가 없습니다. 예약된 작업이 실행되면(월요일 07:47 경제 전망, 평일 07:52 종목 이슈) 여기에 쌓입니다.')); return; }
+  const seen = new Set(d.data.map((r) => r.id));
+  const all = d.data.concat((W.pfRepArc || []).filter((r) => !seen.has(r.id)));
+  const rows = all.filter((r) => type === '전체' || r.type === type).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  // 앱에서만: 리포트 탭에서 옮겨 둔 '리포트_보관' 탭을 더 불러오는 버튼
+  const more = [];
+  if (W.pfApi && W.pfApi.call) {
+    const arc = W.pfRepArcState || (W.pfRepArcState = { offset: 0, total: null, busy: false, err: '' });
+    const done = arc.total != null && arc.offset >= arc.total;
+    const btn = el('button', 'pf-btn pf-rep-more', arc.busy ? '불러오는 중…' : done ? (arc.total ? '보관된 리포트를 모두 불러왔습니다' : '보관된 리포트가 없습니다') : '지난 리포트 더 보기');
+    btn.disabled = arc.busy || done;
+    btn.addEventListener('click', async () => {
+      arc.busy = true; arc.err = ''; W.pfDrawReport();
+      try {
+        const j = await W.pfApi.call({ action: 'reports_archive', offset: arc.offset, limit: 30 });
+        const add = (j.rows || []).map((r, i) => ({ date: String(r[0] || '').slice(0, 10), type: r[1] || '', title: r[2], summary: r[3] || '', body: r[4] || '',
+          tickers: r[5] || '', sources: r[6] || '', id: r[7] || `arc${arc.offset + i}`, archived: true }));
+        W.pfRepArc = (W.pfRepArc || []).concat(add); arc.offset += (j.rows || []).length; arc.total = j.total || 0;
+        if (!(j.rows || []).length) arc.total = arc.offset;
+      } catch (e) { arc.err = '불러오지 못했습니다: ' + (e.message || e); }
+      arc.busy = false; W.pfDrawReport();
+    });
+    more.push(btn);
+    if (arc.err) more.push(el('div', 'pf-rep-empty', arc.err));
+    else if (arc.total) more.push(el('div', 'pf-note', `보관 리포트 ${Math.min(arc.offset, arc.total)} / ${arc.total}건 표시 중`));
+  }
+  if (!rows.length) { box.replaceChildren(el('div', 'pf-rep-empty', all.length ? '이 구분의 리포트가 아직 없습니다.' : '아직 리포트가 없습니다. 예약된 작업이 실행되면(월요일 07:47 경제 전망, 평일 07:52 종목 이슈) 여기에 쌓입니다.'), ...more); return; }
   box.replaceChildren(...rows.map((r) => {
     const card = el('article', 'pf-rep'); const w = 'id=' + encR(r.id);
     const head = el('button'); head.setAttribute('aria-expanded', String(W.pfRepOpen.has(r.id)));
     const meta = el('div', 'meta'); const tag = el('span', 'tag' + (r.type === '종목이슈' ? ' iss' : ''), r.type === '종목이슈' ? '종목 이슈' : r.type === '경제전망' ? '경제 전망' : r.type);
     const dt = el('span', null, r.date); dt.dataset.source = 'reports'; dt.dataset.field = 'date'; dt.dataset.where = w; meta.append(tag, dt);
     if (r.tickers) meta.append(el('span', null, '· ' + r.tickers));
+    if (r.archived) meta.append(el('span', 'tag arc', '보관'));
     const ttl = el('div', 'ttl', r.title); ttl.dataset.source = 'reports'; ttl.dataset.field = 'title'; ttl.dataset.where = w;
     const sum = el('div', 'sum', r.summary); sum.dataset.source = 'reports'; sum.dataset.field = 'summary'; sum.dataset.where = w;
     head.append(meta, ttl, sum); card.append(head);
     if (W.pfRepOpen.has(r.id)) { const b = el('div', 'body'); b.dataset.source = 'reports'; b.dataset.where = w; renderMd(b, r.body); card.append(b); }
     head.addEventListener('click', () => { if (W.pfRepOpen.has(r.id)) W.pfRepOpen.delete(r.id); else W.pfRepOpen.add(r.id); W.pfDrawReport(); });
     return card;
-  }));
+  }), ...more);
 };
 </script>
 
