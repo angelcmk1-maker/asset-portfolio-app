@@ -977,10 +977,12 @@ dash.calc('sim_base', {
     if (rm.length < 36) throw new Error(`지수·환율 시세가 부족해 시뮬레이션을 계산할 수 없습니다(공통 월 ${months.length}개, 쓸 수 있는 월 수익률 ${rm.length}개). 설정에서 '시세 다시 받기'를 눌러 보세요.`);
     const bondM = Math.pow(1 + BOND_Y, 1 / 12) - 1, saveM = Math.pow(1 + SAVE_Y, 1 / 12) - 1;
     const dvM = { kospi: DIV_Y.kospi / 12, sp500: DIV_Y.sp500 / 12, nasdaq: DIV_Y.nasdaq / 12 };
-    const cls = (n) => (/채혼합|채권/.test(n) ? 'mix50' : /나스닥|테크/i.test(n) ? 'nasdaq' : /S&P|미국배당|다우존스/i.test(n) ? 'sp500' : 'kospi');
+    // 달러 종목은 이름에 테크·AI·나스닥이 있거나 IONQ면 나스닥, 그 외는 S&P500으로 봄
+    const cls = (n, ccy) => (/채혼합|채권/.test(n) ? 'mix50' : /나스닥|테크/i.test(n) ? 'nasdaq' : /S&P|미국배당|다우존스/i.test(n) ? 'sp500'
+      : ccy === 'USD' ? (/AI|IONQ|QQQ/i.test(n) ? 'nasdaq' : 'sp500') : 'kospi');
     const addCls = (w, c, v) => { if (c === 'mix50') { w.sp500 += v / 2; w.bond += v / 2; } else w[c] += v; };
     const gw = { kospi: 0, sp500: 0, nasdaq: 0, bond: 0, save: 0 };
-    for (const h of holdings_val) if (h.value_krw) addCls(gw, cls(h.name), h.value_krw);
+    for (const h of holdings_val) if (h.value_krw) addCls(gw, cls(h.name + ' ' + h.ticker, h.ccy), h.value_krw);
     const gsum = gw.kospi + gw.sp500 + gw.nasdaq + gw.bond || 1;
     const lastM = flows.map((r) => r.month).sort().pop();
     const lm = (m, k) => new Date(Date.UTC(Number(m.slice(0, 4)), Number(m.slice(5)) - 1 + k, 1)).toISOString().slice(0, 7);
@@ -997,7 +999,7 @@ dash.calc('sim_base', {
         principal += a.principal; const v = a.value || 0;
         if (a.group === '저축') { w.save += v; continue; }
         const hs = holdings_val.filter((h) => h.account === a.account && h.value_krw);
-        if (hs.length) { let s = 0; for (const h of hs) { addCls(w, cls(h.name), h.value_krw); s += h.value_krw; } if (v - s > 0) w.bond += v - s; }
+        if (hs.length) { let s = 0; for (const h of hs) { addCls(w, cls(h.name + ' ' + h.ticker, h.ccy), h.value_krw); s += h.value_krw; } if (v - s > 0) w.bond += v - s; }
         else if (/우리사주/.test(a.account)) w.kospi += v;
         else if (a.ccy === 'USD') w.bond += v; // 종목 미입력 달러 계좌는 현금(달러 예수금)으로 봄
         else for (const k of ['kospi', 'sp500', 'nasdaq', 'bond']) w[k] += v * gw[k] / gsum;
