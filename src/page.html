@@ -300,7 +300,7 @@
     </div>
     <div class="pf-card" id="card-accounts">
       <h2>계좌별 현황</h2>
-      <p class="pf-note" id="nt-accounts">가계부 기준. 납입 원금 + 배당 누계 + 이자 누계 = 가계부 잔액(원화 계좌). 베트남 저축(VND)은 선택한 통화로 표시합니다.</p>
+      <p class="pf-note" id="nt-accounts">가계부 기준. 납입 원금 + 배당 누계 + 이자 누계 = 가계부 잔액(원화 계좌). 베트남 저축(VND)·미래에셋(USD)은 선택한 통화로 표시합니다.</p>
       <div class="pf-tbl-wrap">
         <table class="pf-tbl" id="tb-accounts" data-source="accounts_view" data-row-key="account">
           <thead><tr>
@@ -746,20 +746,22 @@ dash.calc('bal_latest', {
 
 dash.calc('accounts_view', {
   title: '계좌별 잔액',
-  description: '계좌별 납입 원금(가계부 납입 누계 — 다른 표·홈 원금과 같은 기준), 배당·이자(2024년 이후 / 전체 누계)와 가계부 잔액. VND 계좌는 원/달러 ÷ 달러/동 최근 환율로 원화 환산',
+  description: '계좌별 납입 원금(가계부 납입 누계 — 다른 표·홈 원금과 같은 기준), 배당·이자(2024년 이후 / 전체 누계)와 가계부 잔액. VND 계좌는 원/달러 ÷ 달러/동, USD 계좌는 원/달러 최근 환율로 원화 환산',
   inputs: ['accounts', 'flows', 'usdkrw', 'usdvnd'],
   fn: (accounts, flows, usdkrw, usdvnd) => {
     const START = '2024-01';
     const last = (r) => (r.length ? r[r.length - 1].close : null);
-    const vndkrw = last(usdkrw.filter((r) => r.close > 100)) / last(usdvnd.filter((r) => r.close > 1000));
+    const usdkrw_now = last(usdkrw.filter((r) => r.close > 100));
+    const vndkrw = usdkrw_now / last(usdvnd.filter((r) => r.close > 1000));
+    const rate = (c) => (c === 'VND' ? vndkrw : c === 'USD' ? usdkrw_now : 1);
     return accounts.map((a) => {
       const fl = flows.filter((r) => r.account === a.account); const sum = (f) => fl.filter(f).reduce((s, r) => s + Number(r.krw), 0);
       // 원금은 어느 표에서나 같은 기준(가계부 '납입' 누계)으로 맞춤. 2023년 이전 배당·이자는 원금이 아니라 배당·이자 누계에 넣음
       const principal_krw = sum((r) => r.kind === '납입');
       const dividend_krw = sum((r) => r.month >= START && r.kind === '배당'), interest_krw = sum((r) => r.month >= START && r.kind === '이자');
       const dividend_all = sum((r) => r.kind === '배당'), interest_all = sum((r) => r.kind === '이자');
-      return { ...a, principal_krw, dividend_krw, interest_krw, dividend_all, interest_all, rate_krw: a.ccy === 'VND' ? vndkrw : 1,
-        balance_krw_now: a.ccy === 'VND' ? a.balance_native * vndkrw : a.balance_native,
+      return { ...a, principal_krw, dividend_krw, interest_krw, dividend_all, interest_all, rate_krw: rate(a.ccy),
+        balance_krw_now: a.balance_native * rate(a.ccy),
         ledger_krw: principal_krw + dividend_all + interest_all };
     });
   },
@@ -819,7 +821,7 @@ dash.calc('acct_eval', {
       else if (h != null) { value = h; basis = '보유종목 시세'; }
       else if (b) { value = b.balance_krw; basis = b.date.slice(5).replace('-', '/') + ' 월말 잔고'; }
       else { value = a.balance_krw_now; basis = '가계부 장부'; }
-      return { account: a.account, owner: a.owner, group: a.group, principal: Math.round(principal), value: Math.round(value),
+      return { account: a.account, owner: a.owner, group: a.group, ccy: a.ccy, principal: Math.round(principal), value: Math.round(value),
         gain: Math.round(value - principal), ret: principal > 0 ? value / principal - 1 : null, basis,
         month_balance: b ? b.balance_krw : null, cash_est: gap != null && gap > 0 ? Math.round(gap) : null };
     }).sort((x, y) => y.value - x.value);
@@ -997,6 +999,7 @@ dash.calc('sim_base', {
         const hs = holdings_val.filter((h) => h.account === a.account && h.value_krw);
         if (hs.length) { let s = 0; for (const h of hs) { addCls(w, cls(h.name), h.value_krw); s += h.value_krw; } if (v - s > 0) w.bond += v - s; }
         else if (/우리사주/.test(a.account)) w.kospi += v;
+        else if (a.ccy === 'USD') w.bond += v; // 종목 미입력 달러 계좌는 현금(달러 예수금)으로 봄
         else for (const k of ['kospi', 'sp500', 'nasdaq', 'bond']) w[k] += v * gw[k] / gsum;
       }
       const value = w.kospi + w.sp500 + w.nasdaq + w.bond + w.save; if (!(value > 0)) continue;
@@ -1495,7 +1498,7 @@ W.pfDraw = () => {
       const arows = av.data.filter((a) => owners.includes(a.owner));
       tb.replaceChildren(...arows.map((a) => {
         const tr = document.createElement('tr'); tr.dataset.key = a.account;
-        const bal = fx === 'krw' ? W.pfWon(a.balance_krw_now) : (a.ccy === 'VND' ? won.format(a.balance_native) + ' ₫' : W.pfWon(a.balance_native));
+        const bal = fx === 'krw' ? W.pfWon(a.balance_krw_now) : (a.ccy === 'VND' ? won.format(a.balance_native) + ' ₫' : a.ccy === 'USD' ? '$' + d3.format(',.2f')(a.balance_native) : W.pfWon(a.balance_native));
         for (const [v, l] of [[a.account, 1], [a.owner, 1], [a.group, 1], [a.start.replace(/-/g, '.'), 1], [W.pfWon(a.principal_krw)], [W.pfWon(a.dividend_all)], [W.pfWon(a.interest_all)], [bal]]) { const td = document.createElement('td'); if (l) td.className = 'l'; td.textContent = v; tr.append(td); }
         return tr;
       }));
