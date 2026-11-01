@@ -404,7 +404,7 @@
     </div>
     <div class="pf-card" id="card-tree">
       <h2>포트폴리오 비중</h2>
-      <p class="pf-note">평가금액(원화 환산) 기준</p>
+      <p class="pf-note">평가금액(원화 환산) 기준 · 같은 종목 코드는 계좌가 달라도 합쳐서 표시</p>
       <div class="pf-tree dash-skeleton" id="ch-tree" data-source="holdings_val"></div>
     </div>
     <div class="pf-card" id="card-risk-items">
@@ -1631,7 +1631,16 @@ W.pfDraw = () => {
       tree.querySelectorAll('svg').forEach((n) => n.remove());
       const width = Math.max(280, tree.clientWidth), height = tree.clientWidth < 500 ? 240 : 280;
       if (h.length) {
-        const root = d3.hierarchy({ children: h }).sum((d) => d.value_krw || 0);
+        // 같은 종목 코드는 계좌가 달라도 한 칸으로 합친다
+        const grp = new Map();
+        for (const x of h) {
+          const k = String(x.ticker || '').trim().toUpperCase() || ('名:' + x.name);
+          const g = grp.get(k) || { name: x.name, value_krw: 0, cost_krw: 0, accounts: [] };
+          g.value_krw += x.value_krw; g.cost_krw += x.cost_krw || 0; if (!g.accounts.includes(x.account)) g.accounts.push(x.account);
+          grp.set(k, g);
+        }
+        const leaves = [...grp.values()].map((g) => ({ ...g, ret: g.cost_krw > 0 ? g.value_krw / g.cost_krw - 1 : null })).sort((a, b) => b.value_krw - a.value_krw);
+        const root = d3.hierarchy({ children: leaves }).sum((d) => d.value_krw || 0);
         d3.treemap().size([width, height]).paddingInner(3).round(true)(root);
         const svg = d3.select(tree).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${width} ${height}`).style('display', 'block');
         const tip = W.pfTip(tree);
@@ -1641,7 +1650,7 @@ W.pfDraw = () => {
           .text((d) => ((d.x1 - d.x0) > 70 && (d.y1 - d.y0) > 26 ? d.data.name : ''));
         node.append('text').attr('x', 8).attr('y', 36).attr('fill', 'var(--color-bg)').attr('font-size', 11)
           .text((d) => ((d.x1 - d.x0) > 50 && (d.y1 - d.y0) > 42 ? W.pfPct(d.value / total, false) : ''));
-        node.on('pointermove', (ev, d) => { const [mx, my] = d3.pointer(ev, svg.node()); W.pfTipShow(tree, tip, mx * tree.clientWidth / width, my * tree.clientWidth / width, d.data.name, [{ name: '평가금액', value: W.pfWon(d.data.value_krw) }, { name: '비중', value: W.pfPct(d.data.value_krw / total, false) }, { name: '수익률', value: W.pfPct(d.data.ret) }]); })
+        node.on('pointermove', (ev, d) => { const [mx, my] = d3.pointer(ev, svg.node()); W.pfTipShow(tree, tip, mx * tree.clientWidth / width, my * tree.clientWidth / width, d.data.name, [{ name: '평가금액', value: W.pfWon(d.data.value_krw) }, { name: '비중', value: W.pfPct(d.data.value_krw / total, false) }, { name: '수익률', value: W.pfPct(d.data.ret) }, { name: '계좌', value: d.data.accounts.length > 1 ? `${d.data.accounts.length}개 합산` : d.data.accounts[0] }]); })
           .on('pointerleave', (ev) => { if (ev.pointerType !== 'touch') tip.style.display = 'none'; });
         const treeMove = node.on('pointermove'); node.on('pointerdown', function (ev, d) { treeMove.call(this, ev, d); });
       } else {
