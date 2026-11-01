@@ -22,7 +22,8 @@
 | `web/js/shim.js` | 대시보드의 `dash` API를 Apps Script 데이터로 대신하는 계층 |
 | `web/js/app.js` | 설정(URL·키), 새로고침, 관심종목·보유종목 편집 |
 | `tools/build.py` | `src/page.html` → `web/index.html` |
-| `apps-script/Code.gs` | 구글 시트에 붙이는 데이터 API |
+| `apps-script/Code.gs` | 구글 시트에 붙이는 데이터 API (NAS 가계부 동기화 수신 포함) |
+| `nas/` | 시놀로지 NAS에서 편한가계부 백업을 보관하고 시트에 반영하는 스크립트 — `nas/README.md` |
 | `android-keystore/debug.keystore` | APK 서명 키(업데이트 설치가 되도록 고정) |
 
 ## 처음 설정

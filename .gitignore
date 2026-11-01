@@ -2,3 +2,7 @@ node_modules/
 android/
 *.apk
 .DS_Store
+nas/config.json
+nas/state.json
+nas/*.log
+nas/last_payload.json

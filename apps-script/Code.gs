@@ -8,6 +8,8 @@
  *  4) 폰 앱을 처음 열 때 웹 앱 URL 과 API 키를 입력
  *
  *  5) 리포트 자동 보관: 함수 선택에서 setupArchiveTrigger 를 골라 ▶ 실행(한 번만). 매월 1일 새벽에 오래된 리포트를 '리포트_보관' 탭으로 옮깁니다.
+ *  6) NAS 가계부 동기화: NAS의 nas/ledger_sync.py 가 같은 웹 앱 URL·API 키로 POST(action=ledger_sync)해
+ *     월별흐름·배당내역·계좌목록 G열을 다시 씁니다. 따로 실행할 함수는 없습니다(nas/README.md 참고).
  *
  * 이 스크립트를 고친 뒤에는 배포 → 배포 관리 → 연필(수정) → 버전: 새 버전 → 배포 를 눌러야 반영됩니다(URL은 그대로).
  */
@@ -69,6 +71,7 @@ function doGet(e) {
     if (action === 'hold_save') return json_(holdSave_(p));
     if (action === 'hold_del') return json_(holdDel_(p));
     if (action === 'reports_archive') return json_(reportsArchive_(p));
+    if (action === 'ledger_status') return json_(ledgerStatus_());
     return json_({ ok: false, error: 'unknown_action' });
   } catch (err) {
     return json_({ ok: false, error: 'server', message: String(err && err.message || err) });
@@ -327,4 +330,113 @@ function reportsArchive_(p) {
   rows.sort((a, b) => (String(a[0]) < String(b[0]) ? 1 : String(a[0]) > String(b[0]) ? -1 : 0));
   const off = Math.max(0, Number(p.offset) || 0), lim = Math.min(100, Math.max(1, Number(p.limit) || 30));
   return { ok: true, rows: rows.slice(off, off + lim), total: rows.length };
+}
+
+// ---------- NAS 가계부 동기화 ----------
+// NAS(nas/ledger_sync.py)가 편한가계부 백업을 변환해 POST로 보낸다.
+// 받은 값으로 월별흐름(A:D)·배당내역(A:E)을 통째로 다시 쓰고, 계좌목록 G열(가계부 잔액)을 고친다.
+// 배당 종목명은 기존 배당내역에서 (일자·계좌·금액)이 같은 줄의 이름을 이어받고,
+// 새 건은 내용 문구에 기존 종목명이 들어 있으면 그 이름, 없으면 '기타 배당'으로 넣는다.
+const LEDGER_LOG = '_가계부동기화';
+
+function doPost(e) {
+  try {
+    const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    const key = PropertiesService.getScriptProperties().getProperty('API_KEY');
+    if (!key || body.key !== key) return json_({ ok: false, error: 'unauthorized', message: 'API 키가 맞지 않습니다.' });
+    if (body.action === 'ledger_sync') return json_(ledgerSync_(body));
+    return json_({ ok: false, error: 'unknown_action' });
+  } catch (err) {
+    return json_({ ok: false, error: 'server', message: String(err && err.message || err) });
+  }
+}
+
+function ymd_(s) {
+  const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+}
+
+function compact_(s) { return String(s || '').replace(/\s+/g, '').toUpperCase(); }
+
+function ledgerSync_(b) {
+  const flows = Array.isArray(b.flows) ? b.flows : [];
+  const divs = Array.isArray(b.divs) ? b.divs : [];
+  const bal = b.balances || {};
+  if (!flows.length) return { ok: false, error: 'empty', message: '월별 흐름이 비어 있어 반영하지 않았습니다.' };
+  const lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const fs = ss.getSheetByName('월별흐름'), ds = ss.getSheetByName('배당내역'), ms = ss.getSheetByName('계좌목록');
+    // 안전장치: 기존보다 크게 줄면(손상·잘린 백업 의심) 반영하지 않음. force=true 로만 넘길 수 있음
+    const oldF = Math.max(0, fs.getLastRow() - 1), oldD = Math.max(0, ds.getLastRow() - 1);
+    if (!b.force && (flows.length < oldF * 0.9 || divs.length < oldD * 0.9)) {
+      return { ok: false, error: 'shrink', message: '기존보다 줄 수가 10% 넘게 줄어 반영하지 않았습니다 (흐름 ' + oldF + '→' + flows.length + ', 배당 ' + oldD + '→' + divs.length + ').' };
+    }
+    if (b.dry_run) return { ok: true, dry_run: true, flows: flows.length, divs: divs.length, old_flows: oldF, old_divs: oldD };
+
+    // 배당 종목명 이어받기
+    const old = oldD ? ds.getRange(2, 1, oldD, 5).getValues() : [];
+    const byKey = new Map(); const names = new Set();
+    for (const r of old) {
+      const d = cell_(r[0]); const nm = String(r[3] || '').trim(); if (!d || !nm) continue;
+      const k = [String(d).slice(0, 10), r[2], Math.round(Number(r[4]) || 0)].join('|');
+      if (!byKey.has(k)) byKey.set(k, []);
+      byKey.get(k).push(nm);
+      if (nm !== '기타 배당') names.add(nm);
+    }
+    const cand = [...names].sort((a, b2) => compact_(b2).length - compact_(a).length);
+    let fresh = 0;
+    const drows = divs.map((v) => {
+      const k = [v.date, v.account, Math.round(Number(v.krw) || 0)].join('|');
+      let nm = byKey.has(k) && byKey.get(k).length ? byKey.get(k).shift() : '';
+      if (!nm) {
+        fresh++;
+        const t = compact_(v.text);
+        nm = cand.find((c) => t.indexOf(compact_(c)) >= 0) || (/현대EL/i.test(v.text || '') ? '현대엘리베이터' : '기타 배당');
+      }
+      return [ymd_(v.date), v.owner, v.account, nm, Number(v.krw) || 0];
+    });
+    // 시트 수식이 '월별흐름'!A열을 날짜로 비교하므로 문자열이 아니라 날짜(그 달 1일)로 넣는다
+    const frows = flows.map((f) => [ymd_(f.month + '-01'), f.account, f.kind, Number(f.krw) || 0]);
+    if (frows.some((r) => !r[0]) || drows.some((r) => !r[0])) return { ok: false, error: 'bad_date', message: '날짜 형식이 맞지 않는 줄이 있어 반영하지 않았습니다.' };
+
+    // 월별흐름·배당내역 다시 쓰기
+    if (oldF) fs.getRange(2, 1, oldF, 4).clearContent();
+    fs.getRange(2, 1, frows.length, 4).setNumberFormats(frows.map(() => ['yyyy-mm', '@', '@', '#,##0'])).setValues(frows);
+    if (oldD) ds.getRange(2, 1, oldD, 5).clearContent();
+    if (drows.length) ds.getRange(2, 1, drows.length, 5).setNumberFormats(drows.map(() => ['yyyy-mm-dd', '@', '@', '@', '#,##0'])).setValues(drows);
+
+    // 계좌목록 G열(가계부 잔액)
+    const meta = ms.getRange(5, 1, 40, 7).getValues(); let gset = 0;
+    meta.forEach((r, i) => {
+      const a = String(r[1] || '').trim();
+      if (a && Object.prototype.hasOwnProperty.call(bal, a)) { ms.getRange(5 + i, 7).setValue(Math.round(Number(bal[a]) || 0)); gset++; }
+    });
+    const known = new Set(meta.map((r) => String(r[1] || '').trim()).filter(String));
+    const missing = Object.keys(bal).filter((a) => !known.has(a));
+
+    const res = { ok: true, flows: frows.length, divs: drows.length, new_divs: fresh, balances: gset, missing_accounts: missing,
+      source: b.source || '', cutoff: b.cutoff || '', at: new Date().toISOString() };
+    ledgerLog_(res);
+    return res;
+  } finally { lock.releaseLock(); }
+}
+
+function ledgerLog_(res) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(LEDGER_LOG);
+  if (!sh) {
+    sh = ss.insertSheet(LEDGER_LOG);
+    sh.getRange(1, 1, 1, 7).setValues([['반영 시각', '백업 파일', '마감일', '월별흐름', '배당', '새 배당', '시트에 없는 계좌']]);
+    sh.setFrozenRows(1); sh.hideSheet();
+  }
+  sh.appendRow([Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm'), res.source, res.cutoff, res.flows, res.divs, res.new_divs, (res.missing_accounts || []).join(', ')]);
+  const n = sh.getLastRow(); if (n > 400) sh.deleteRows(2, n - 400);
+  PropertiesService.getScriptProperties().setProperty('LEDGER_LAST', JSON.stringify(res));
+}
+
+/** 앱·NAS에서 마지막 동기화 결과 확인: ?action=ledger_status */
+function ledgerStatus_() {
+  const v = PropertiesService.getScriptProperties().getProperty('LEDGER_LAST');
+  return { ok: true, last: v ? JSON.parse(v) : null };
 }

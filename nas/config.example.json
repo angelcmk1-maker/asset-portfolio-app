@@ -1,0 +1,8 @@
+{
+  "backup_dir": "/volume1/backup/MoneyManager",
+  "archive_dir": "/volume1/backup/MoneyManager_archive",
+  "webapp_url": "https://script.google.com/macros/s/여기에_웹앱_ID/exec",
+  "api_key": "Apps Script setup 실행 로그의 API 키",
+  "keep_daily": 60,
+  "min_age_minutes": 10
+}
