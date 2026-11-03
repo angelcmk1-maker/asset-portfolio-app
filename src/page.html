@@ -258,8 +258,8 @@
       </div>
       <div class="pf-card" id="card-home-bench">
         <h2>누적수익률 비교</h2>
-        <p class="pf-note" id="nt-home-bench">투자·연금 계좌에 넣은 원금 대비 수익률입니다. 내 투자는 현재 평가금액, 지수는 같은 돈을 그 달 지수에 넣었다고 가정한 가치입니다.</p>
-        <div class="pf-cmp" id="cmp-home" data-source="bench acct_eval"></div>
+        <p class="pf-note" id="nt-home-bench">투자·연금 계좌에 넣은 원금 대비 수익률입니다. 내 투자는 월말 평가 잔고, 지수는 같은 돈을 그 달 지수에 넣었다고 가정한 가치입니다.</p>
+        <div class="pf-cmp" id="cmp-home" data-source="bench eval_trend"></div>
       </div>
     </div>
   </section>
@@ -1496,11 +1496,10 @@ W.pfDraw = () => {
       cmp.replaceChildren(); cmp.classList.remove('dash-skeleton');
       if (last) {
         const k = fx === 'krw' ? '_fx' : '';
-        // 내 투자 = 투자·연금 계좌의 현재 평가금액(시세 반영). 지수와 같은 기준으로 비교. 평가가 없으면 장부 자산(원금+배당+이자)
-        const aev = dash.data('acct_eval'); const owners = combo.split('+');
-        const evRows = aev.status === 'ok' ? aev.data.filter((x) => owners.includes(x.owner) && (x.group === '투자' || x.group === '연금')) : [];
-        const myVal = evRows.length ? d3.sum(evRows, (x) => x.value) : last.book;
-        const items = [['투자원금', last.principal, 'principal'], ['내 투자', myVal, evRows.length ? 'value' : 'book'], ['KOSPI', last.kospi, 'kospi'], ['S&P500', last['sp500' + k], 'sp500' + k], ['NASDAQ', last['nasdaq' + k], 'nasdaq' + k]];
+        // 내 투자 = 투자·연금 계좌의 최근 월말 평가 잔고(계좌잔고 탭, 시세 반영 · 잔고가 빈 계좌는 장부 금액). 위쪽 총 자산과 같은 기준
+        const evh = dash.data('eval_trend'); const evLast = evh.status === 'ok' ? evh.data.filter((e) => e.combo === combo && e.value_inv > 0).pop() : null;
+        const myVal = evLast ? evLast.value_inv : last.book;
+        const items = [['투자원금', last.principal, 'principal'], ['내 투자', myVal, evLast ? 'value_inv' : 'book'], ['KOSPI', last.kospi, 'kospi'], ['S&P500', last['sp500' + k], 'sp500' + k], ['NASDAQ', last['nasdaq' + k], 'nasdaq' + k]];
         const colr = { '내 투자': P.mine, KOSPI: P.kospi, 'S&P500': P.sp, NASDAQ: P.nq };
         const bars = items.slice(1).map(([lb, v]) => ({ lb, r: v / last.principal - 1 }));
         const svgBox = document.createElement('div'); svgBox.style.gridColumn = '1/-1'; svgBox.style.position = 'relative'; cmp.append(svgBox);
@@ -1514,12 +1513,12 @@ W.pfDraw = () => {
         for (const [lb, v, f] of items) {
           const d = document.createElement('div'); const l = document.createElement('div'); l.className = 'lb'; l.textContent = lb;
           const vv = document.createElement('div'); vv.className = 'v'; vv.textContent = W.pfShort(v) + '원';
-          if (f === 'value') { vv.dataset.source = 'acct_eval'; } else { vv.dataset.source = 'bench'; vv.dataset.field = f; vv.dataset.where = `combo=${enc(combo)}&month=${last.month}`; }
+          if (f === 'value_inv') { vv.dataset.source = 'eval_trend'; vv.dataset.field = f; vv.dataset.where = `combo=${enc(combo)}&month=${evLast.month}`; } else { vv.dataset.source = 'bench'; vv.dataset.field = f; vv.dataset.where = `combo=${enc(combo)}&month=${last.month}`; }
           if (colr[lb]) vv.style.color = colr[lb];
           const sub = document.createElement('div'); sub.className = 'sub'; sub.textContent = lb === '투자원금' ? '기준' : W.pfPct(v / last.principal - 1); if (lb !== '투자원금') W.pfSign(sub, v / last.principal - 1);
           d.append(l, vv, sub); cmp.append(d);
         }
-        document.getElementById('nt-home-bench').textContent = `투자·연금 계좌에 넣은 원금 대비 수익률. 내 투자는 그 계좌들의 현재 평가금액(시세 반영), 지수는 같은 돈을 그 달 지수에 똑같이 넣었다고 가정한 ${last.month.replace('-', '.')} 가치. 위쪽 총 자산 수익률은 저축 계좌까지 포함해 조금 다를 수 있습니다. ${fx === 'krw' ? '미국 지수는 환율 변동 포함(원화 환산).' : '미국 지수는 달러 기준(환율 미반영).'}`;
+        document.getElementById('nt-home-bench').textContent = `투자·연금 계좌에 넣은 원금 대비 수익률. 내 투자는 그 계좌들의 ${evLast ? evLast.month.replace('-', '.') + ' ' : ''}월말 평가 잔고(시세 반영, 계좌잔고 탭), 지수는 같은 돈을 그 달 지수에 똑같이 넣었다고 가정한 ${last.month.replace('-', '.')} 가치. 위쪽 총 자산 수익률은 저축 계좌까지 포함해 조금 다를 수 있습니다. ${fx === 'krw' ? '미국 지수는 환율 변동 포함(원화 환산).' : '미국 지수는 달러 기준(환율 미반영).'}`;
       }
     } else if (bn.status === 'error') W.pfFail(cmp);
   }
