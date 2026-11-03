@@ -27,9 +27,12 @@ META = [
     ("주택청약종합저축[인식]", "본인", "저축", "KRW"), ("베트남 저축(VND)", "본인", "저축", "VND"),
     ("우리사주(현대엘리베이터)", "본인", "투자", "KRW"), ("미래에셋[이솔]", "이솔", "투자", "KRW"),
     ("주택청약종합저축[이솔]", "이솔", "저축", "KRW"), ("미래에셋[이서]", "이서", "투자", "KRW"),
-    ("주택청약종합저축[이서]", "이서", "저축", "KRW"), ("미래에셋(USD)", "본인", "투자", "USD"),
+    ("주택청약종합저축[이서]", "이서", "저축", "KRW"),
 ]
 META_BY = {m[0]: m for m in META}
+# 가계부의 다른 계좌를 하나로 합쳐 집계 (2026-11-01, claude/mm2flows.py 와 같음):
+# 미래에셋(USD)·미래에셋[USD] → 미래에셋[인식], 원화 금액 기준. 두 계좌 사이 이체는 서로 상쇄된다.
+MERGE = {"미래에셋(USD)": "미래에셋[인식]", "미래에셋[USD]": "미래에셋[인식]"}
 ESOP = "우리사주(현대엘리베이터)"
 
 
@@ -84,7 +87,7 @@ def open_db(path, tmpdir):
 
 def convert(c, cutoff):
     """claude/mm2flows.py 와 같은 규칙(작업지침 3-2)."""
-    uid2name = {u: n for u, n in c.execute("select uid, NIC_NAME from ASSETS")}
+    uid2name = {u: MERGE.get(n, n) for u, n in c.execute("select uid, NIC_NAME from ASSETS")}
     cat = {u: (n, p) for u, n, p in c.execute("select uid, NAME, pUid from ZCATEGORY")}
 
     def catpath(u):
