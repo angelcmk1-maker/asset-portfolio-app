@@ -42,7 +42,22 @@
   }
   const field = (label, input) => { const l = h('label', 'app-field'); l.append(h('span', null, label), input); return l; };
 
+  function openServerSettings() {
+    const { box } = modal('설정');
+    const msg = h('p', 'app-msg', window.PF_USER ? window.PF_USER + ' 로 로그인됨' : '');
+    const mk = h('button', 'app-ghost', '시세 다시 받기(지수·환율)');
+    mk.onclick = async () => { mk.disabled = true; try { await api.call({ action: 'market_refresh' }); await api.load(true); msg.textContent = '시세를 새로 받았습니다.'; } catch (e) { msg.textContent = e.message; } mk.disabled = false; };
+    const clr = h('button', 'app-ghost', '저장된 데이터 지우기');
+    clr.onclick = () => { api.clear(); msg.textContent = '이 기기에 저장된 캐시를 지웠습니다.'; };
+    const dg = h('button', 'app-ghost', '데이터 상태 보기');
+    dg.onclick = () => { const pre = h('div', 'app-diag'); for (const x of api.diag()) { const r = h('div', x.ok ? '' : 'bad'); r.append(h('b', null, x.id), h('span', null, ' ' + x.text)); pre.append(r); } dg.replaceWith(pre); };
+    const out = h('button', 'app-ghost danger', '로그아웃');
+    out.onclick = async () => { out.disabled = true; api.clear(); try { await fetch('/auth/signout', { method: 'POST', credentials: 'same-origin' }); } catch (e) { /* noop */ } location.href = '/login'; };
+    box.append(msg, h('h3', null, '데이터'), mk, clr, dg, h('h3', null, '계정'), out, h('p', 'app-msg', '웹 버전 ' + (window.PF_BUILD || '')));
+  }
+
   function openSettings(first) {
+    if (window.PF_SERVER) { openServerSettings(); return; }
     const { box, close } = modal(first ? '처음 설정' : '설정');
     const c = api.cfg();
     const url = h('input'); url.type = 'url'; url.placeholder = 'https://script.google.com/macros/s/…/exec'; url.value = c.url;
@@ -218,7 +233,7 @@
     wireWatchLink();
     wireHoldButton();
     if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((r) => r.update()).catch(() => {}); } catch (e) { /* noop */ } }
-    const go = () => { api.boot(); if (!api.cfg().url || !api.cfg().key) openSettings(true); };
+    const go = () => { api.boot(); if (!window.PF_SERVER && (!api.cfg().url || !api.cfg().key)) openSettings(true); };
     if (window.pfLock) window.pfLock.start().then(go); else go(); // 잠금(비밀번호) 해제 뒤에 데이터를 연다
   });
 })();
