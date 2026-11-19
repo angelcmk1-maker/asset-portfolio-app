@@ -96,8 +96,20 @@
   }
 
   // ---------- API ----------
-  const cfg = () => ({ url: store.get('pf_api_url') || '', key: store.get('pf_api_key') || '' });
+  // 웹(포털) 버전은 로그인한 서버(/api/gs)가 Apps Script 키를 대신 들고 있으므로 주소·키 입력이 없다
+  const SERVER = !!window.PF_SERVER;
+  const cfg = () => (SERVER ? { url: '/api/gs', key: 'server' } : { url: store.get('pf_api_url') || '', key: store.get('pf_api_key') || '' });
+  async function callServer(params) {
+    const res = await fetch('/api/gs', { method: 'POST', credentials: 'same-origin', cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) });
+    if (res.status === 401) { location.href = '/login'; throw Object.assign(new Error('다시 로그인하세요.'), { code: 'auth' }); }
+    let j = null; try { j = await res.json(); } catch (e) { /* noop */ }
+    if (j && j.user) window.PF_USER = j.user;
+    if (!res.ok || !j || !j.ok) throw Object.assign(new Error((j && (j.message || j.error)) || ('서버 응답 ' + res.status)), { code: j && j.error });
+    return j;
+  }
   async function call(params) {
+    if (SERVER) return callServer(params);
     const { url, key } = cfg();
     if (!url || !key) throw Object.assign(new Error('API 주소와 키를 먼저 입력하세요.'), { code: 'no_config' });
     const q = new URLSearchParams(Object.assign({ key }, params)).toString();
@@ -113,7 +125,7 @@
     state.loading = true; state.error = null; window.pfApp && window.pfApp.status(state); fire();
     try {
       // 지수·환율은 GitHub에서 매일 받아 두는 공개 시세(data/market.json)를 우선 쓰고, 없거나 짧으면 Apps Script 시세를 씀
-      const [j, pm] = await Promise.all([call({ action: 'all' }), fetch('data/market.json', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null)]);
+      const [j, pm] = await Promise.all([call(Object.assign({ action: 'all' }, force && SERVER ? { fresh: '1' } : {})), fetch(window.PF_MARKET_URL || 'data/market.json', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null)]);
       const src = {};
       if (pm && pm.market) {
         j.market = j.market || {};

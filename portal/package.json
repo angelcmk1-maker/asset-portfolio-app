@@ -1,0 +1,19 @@
+{
+  "name": "asset-portfolio-portal",
+  "version": "0.1.0",
+  "private": true,
+  "description": "자산 포트폴리오 웹 버전 (Next.js + Supabase 로그인, Vercel 배포)",
+  "scripts": {
+    "prebuild": "python3 ../tools/build.py --portal || echo '대시보드 화면 재생성 건너뜀(저장소에 있는 portal/public 사용)'",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.119.2",
+    "next": "^16.4.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  }
+}
