@@ -2,11 +2,17 @@
 """src/page.html(대시보드 화면)을 앱용 web/index.html 로 감싼다.
 
 페이지 코드는 claude.ai 대시보드와 같은 것을 쓰고, `dash` API는 web/js/shim.js 가 대신한다.
-사용: python3 tools/build.py
+사용: python3 tools/build.py            → web/index.html (GitHub Pages·APK)
+      python3 tools/build.py --portal   → portal/public/app.html + js·vendor·icons (Vercel 웹 버전, 로그인 후 /api/gs 사용)
 """
 import datetime
 import pathlib
 import re
+import shutil
+import sys
+
+PORTAL = "--portal" in sys.argv
+MARKET_URL = "https://angelcmk1-maker.github.io/asset-portfolio-app/data/market.json"
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 page = (ROOT / "src" / "page.html").read_text(encoding="utf-8")
@@ -97,6 +103,10 @@ body{padding:calc(env(safe-area-inset-top) + 4px) 12px 0}
 .lk-link{font:inherit;font-size:12px;color:var(--color-fg-muted);background:none;border:0;text-decoration:underline;margin-top:10px;cursor:pointer;line-height:1.5}
 """
 
+head_extra = (f'<script>window.PF_SERVER = true; window.PF_MARKET_URL = "{MARKET_URL}";</script>\n' if PORTAL else "")
+# 웹 버전은 Supabase 로그인이 잠금 역할을 하므로 숫자 잠금(lock.js)을 넣지 않는다
+lock = "" if PORTAL else f'<script src="js/lock.js?v={build}"></script>\n'
+
 html = f"""<!doctype html>
 <html lang="ko">
 <head>
@@ -107,10 +117,9 @@ html = f"""<!doctype html>
 <link rel="manifest" href="manifest.webmanifest">
 <style>{THEME}</style>
 <script>window.PF_BUILD = "{build}";</script>
-<script src="vendor/d3.min.js"></script>
+{head_extra}<script src="vendor/d3.min.js"></script>
 <script src="js/shim.js?v={build}"></script>
-<script src="js/lock.js?v={build}"></script>
-<script src="js/app.js?v={build}"></script>
+{lock}<script src="js/app.js?v={build}"></script>
 </head>
 <body>
 <div id="dash-root">
@@ -119,5 +128,15 @@ html = f"""<!doctype html>
 </body>
 </html>
 """
-(ROOT / "web" / "index.html").write_text(html, encoding="utf-8")
-print("web/index.html", len(html), "bytes, build", build)
+if PORTAL:
+    out = ROOT / "portal" / "public"
+    (out / "js").mkdir(parents=True, exist_ok=True)
+    (out / "vendor").mkdir(exist_ok=True)
+    (out / "icons").mkdir(exist_ok=True)
+    (out / "app.html").write_text(html, encoding="utf-8")
+    for f in ["js/shim.js", "js/app.js", "vendor/d3.min.js", "icons/icon-192.png", "icons/icon-512.png", "manifest.webmanifest", "sw.js"]:
+        shutil.copyfile(ROOT / "web" / f, out / f)
+    print("portal/public/app.html", len(html), "bytes, build", build)
+else:
+    (ROOT / "web" / "index.html").write_text(html, encoding="utf-8")
+    print("web/index.html", len(html), "bytes, build", build)
